@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/db';
-import { signToken, setAuthCookie, clearAuthCookie } from '@/lib/utils/auth';
-import { validateStudentCredentials, studentLoginSchema } from '@/lib/utils/validation';
-import { SUCCESS_MESSAGES } from '@/lib/constants';
+import prisma from '@/app/lib/db';
+import { signToken, setAuthCookie, clearAuthCookie } from '@/app/lib/utils/auth';
+import { validateStudentCredentials, studentLoginSchema } from '@/app/lib/utils/validation';
+import { SUCCESS_MESSAGES } from '@/app/lib/constants';
 
 /**
  * POST /api/auth - Login endpoint
