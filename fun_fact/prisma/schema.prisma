@@ -11,12 +11,13 @@ datasource db {
 }
 
 model Student {
-  id        String    @id
-  email     String    @unique
-  name      String?
-  bookings  Booking[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id           String    @id // Student ID like DR-4824-25
+  email        String    @unique
+  name         String
+  phoneNumber  String?
+  bookings     Booking[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 model Session {
@@ -41,7 +42,7 @@ model Booking {
   updatedAt DateTime @updatedAt
 
   @@unique([studentId, sessionId])
-  @@unique([studentId, session.day])
+  @@index([studentId])
 }
 
 enum Day {
