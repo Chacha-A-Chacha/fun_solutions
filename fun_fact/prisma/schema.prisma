@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id        String    @id
+  email     String    @unique
+  name      String?
+  bookings  Booking[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Session {
+  id        String    @id @default(uuid())
+  day       Day
+  timeSlot  TimeSlot
+  capacity  Int       @default(4)
+  bookings  Booking[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([day, timeSlot])
+}
+
+model Booking {
+  id        String   @id @default(uuid())
+  student   Student  @relation(fields: [studentId], references: [id])
+  studentId String
+  session   Session  @relation(fields: [sessionId], references: [id])
+  sessionId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, sessionId])
+  @@unique([studentId, session.day])
+}
+
+enum Day {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum TimeSlot {
+  SLOT_8_10   // Monday-Thursday: 8-10am
+  SLOT_10_12  // Monday-Thursday: 10am-12pm
+  SLOT_13_15  // Monday-Thursday: 1-3pm
+  SLOT_15_17  // Monday-Thursday: 3-5pm
+  SLOT_9_11   // Weekend: 9-11am
+  SLOT_11_13  // Weekend: 11am-1pm
+  SLOT_14_16  // Weekend: 2-4pm
+  SLOT_16_18  // Weekend: 4-6pm
+}
