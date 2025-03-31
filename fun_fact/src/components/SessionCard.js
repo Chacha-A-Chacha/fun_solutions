@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { TIME_SLOT_NAMES } from '@/lib/constants';
-import useBookings from '@/hooks/useBookings';
+import { TIME_SLOT_NAMES } from '@/app/lib/constants';
+import useBookings from '@/app/hooks/useBookings';
 
 export default function SessionCard({ session }) {
   const { bookSession, isSessionBooked, remainingSlots, bookingInProgress } = useBookings();

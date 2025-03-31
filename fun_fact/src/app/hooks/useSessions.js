@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { useAuth } from './useAuth';
-import { DAY_NAMES, TIME_SLOT_NAMES } from '@/lib/constants';
+import { DAY_NAMES, TIME_SLOT_NAMES } from '@/app/lib/constants';
 
 export default function useSessions() {
   const { isAuthenticated } = useAuth();

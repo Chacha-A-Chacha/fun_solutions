@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/app/hooks/useAuth';
 import { Toaster } from 'react-hot-toast';
 import SessionCalendar from '@/components/SessionCalendar';
 import SelectedSessions from '@/components/SelectedSessions';

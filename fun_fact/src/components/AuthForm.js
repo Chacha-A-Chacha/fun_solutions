@@ -39,9 +39,15 @@ export default function AuthForm() {
           <input
             id="id"
             type="text"
-            {...register('id', { required: 'Student ID is required' })}
+            {...register('id', { 
+              required: 'Student ID is required',
+              pattern: {
+                value: /^DR-\d{4}-\d{2}$/,
+                message: 'Invalid ID format. Use format: DR-XXXX-XX'
+              }
+            })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter your student ID"
+            placeholder="e.g. DR-4824-25"
             disabled={isSubmitting || loading}
           />
           {errors.id && (

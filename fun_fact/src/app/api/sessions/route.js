@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/db';
-import { withAuth, getCurrentStudent } from '@/lib/utils/auth';
-import { DAYS, DAY_TIME_SLOTS } from '@/lib/constants';
+import prisma from '@/app/lib/db';
+import { withAuth, getCurrentStudent } from '@/app/lib/utils/auth';
+import { DAYS, DAY_TIME_SLOTS } from '@/app/lib/constants';
 
 /**
  * GET /api/sessions - Get all available sessions with booking counts

@@ -34,6 +34,16 @@ export default function LoginPage() {
             <li>Each session has a maximum capacity of 4 students</li>
             <li>You can change your selections until all spots are filled</li>
           </ul>
+
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <a
+              href="/instructor?instructor_key=demo_instructor_access"
+              className="text-sm text-blue-600 hover:text-blue-800"
+            >
+              Instructor Dashboard
+            </a>
+          </div>
+          
         </div>
       </div>
     </div>

@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { DAY_NAMES } from '@/lib/constants';
+import { DAY_NAMES } from '@/app/lib/constants';
 import SessionCard from './SessionCard';
-import useBookings from '@/hooks/useBookings';
-import useSessions from '@/hooks/useSessions';
+import useBookings from '@/app/hooks/useBookings';
+import useSessions from '@/app/hooks/useSessions';
 
 export default function SessionCalendar() {
   const { sessions, sessionsByDay, loading: sessionsLoading } = useSessions();

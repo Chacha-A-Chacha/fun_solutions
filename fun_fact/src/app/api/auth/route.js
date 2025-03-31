@@ -35,10 +35,14 @@ export async function POST(request) {
     
     // Create or update student record
     const student = await prisma.student.upsert({
-      where: { id },
-      update: { email },
-      create: { id, email }
-    });
+        where: { id },
+        update: { email },
+        create: { 
+          id, 
+          email,
+          name: `Student ${id}` // Default name since it's required but not collected at login
+        }
+      });
     
     // Generate JWT token
     const token = await signToken({

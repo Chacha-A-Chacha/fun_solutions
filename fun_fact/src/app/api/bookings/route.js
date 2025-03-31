@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/db';
-import { withAuth } from '@/lib/utils/auth';
-import { validateSessionBooking, sessionBookingSchema } from '@/lib/utils/validation';
-import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '@/lib/constants';
+import prisma from '@/app/lib/db';
+import { withAuth } from '@/app/lib/utils/auth';
+import { validateSessionBooking, sessionBookingSchema } from '@/app/lib/utils/validation';
+import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '@/app/lib/constants';
 
 /**
  * POST /api/bookings - Create a new booking

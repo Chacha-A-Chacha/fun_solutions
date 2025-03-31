@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { useAuth } from './useAuth';
-import { DAY_NAMES, TIME_SLOT_NAMES, SESSION_CONSTRAINTS } from '@/lib/constants';
+import { DAY_NAMES, TIME_SLOT_NAMES, SESSION_CONSTRAINTS } from '@/app/lib/constants';
 
 export default function useBookings() {
   const { isAuthenticated } = useAuth();

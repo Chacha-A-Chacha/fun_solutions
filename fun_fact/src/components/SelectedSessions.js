@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { DAY_NAMES, TIME_SLOT_NAMES } from '@/lib/constants';
-import useBookings from '@/hooks/useBookings';
+import { DAY_NAMES, TIME_SLOT_NAMES } from '@/app/lib/constants';
+import useBookings from '@/app/hooks/useBookings';
 
 export default function SelectedSessions() {
   const { bookings, cancelBooking, loading, bookingInProgress, formatBooking } = useBookings();
