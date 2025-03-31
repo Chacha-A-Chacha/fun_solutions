@@ -38,6 +38,7 @@ export async function verifyToken(token) {
     const { payload } = await jwtVerify(token, secretKey);
     return payload;
   } catch (error) {
+    console.error('Token verification error:', error);
     return null;
   }
 }
@@ -48,13 +49,15 @@ export async function verifyToken(token) {
  * @param {string} token - The token to set
  */
 export function setAuthCookie(token) {
+  // Use an absurdly long cookie expiration to ensure it stays valid
+  // The JWT itself has a controlled expiration that will be enforced
   cookies().set({
     name: AUTH_COOKIE,
     value: token,
     httpOnly: true,
     path: '/',
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 60 * 60 * 24, // 24 hours in seconds
+    maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
     sameSite: 'strict'
   });
 }
@@ -75,15 +78,44 @@ export function getAuthToken() {
 }
 
 /**
- * Get the current authenticated student from the token
- * @returns {Promise<Object|null>} - The student data or null if not authenticated
+ * Helper function to check authentication for API handlers
+ * @param {NextRequest} request - The Next.js request
+ * @returns {Promise<Object|null>} - The authenticated student or null
  */
-export async function getCurrentStudent() {
-  const token = getAuthToken();
-  if (!token) return null;
-  
-  const payload = await verifyToken(token);
-  return payload;
+export async function getAuthenticatedStudent() {
+  try {
+    const token = getAuthToken();
+    if (!token) return null;
+    
+    const payload = await verifyToken(token);
+    if (!payload) {
+      clearAuthCookie();
+      return null;
+    }
+    
+    // Import the prisma client here to avoid circular dependencies
+    const { default: prisma } = await import('@/app/lib/db');
+    
+    const student = await prisma.student.findUnique({
+      where: { id: payload.id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phoneNumber: true
+      }
+    });
+    
+    if (!student) {
+      clearAuthCookie();
+      return null;
+    }
+    
+    return student;
+  } catch (error) {
+    console.error('Authentication error:', error);
+    return null;
+  }
 }
 
 /**
@@ -93,18 +125,26 @@ export async function getCurrentStudent() {
  */
 export function withAuth(handler) {
   return async (request, ...args) => {
-    const student = await getCurrentStudent();
-    
-    if (!student) {
+    try {
+      const student = await getAuthenticatedStudent();
+      
+      if (!student) {
+        return NextResponse.json(
+          { error: 'Authentication required' },
+          { status: 401 }
+        );
+      }
+      
+      // Add student data to the request context
+      request.student = student;
+      
+      return handler(request, ...args);
+    } catch (error) {
+      console.error('Auth middleware error:', error);
       return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
+        { error: 'Authentication failed' },
+        { status: 500 }
       );
     }
-    
-    // Add student data to the request context
-    request.student = student;
-    
-    return handler(request, ...args);
   };
 }

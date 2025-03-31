@@ -44,8 +44,9 @@ export default function useBookings() {
       
       const { data } = await axios.post('/api/bookings', { sessionId });
       
-      // Update local bookings state
-      await fetchBookings();
+      // Update local bookings state immediately
+      const newBooking = data.booking;
+      setBookings(prevBookings => [...prevBookings, newBooking]);
       
       toast.success(data.message);
       return true;

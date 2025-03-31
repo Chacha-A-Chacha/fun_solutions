@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db';
-import { withAuth, getCurrentStudent } from '@/app/lib/utils/auth';
+import { withAuth, getAuthenticatedStudent } from '@/app/lib/utils/auth';
 import { DAYS, DAY_TIME_SLOTS } from '@/app/lib/constants';
 
 /**
@@ -9,7 +9,7 @@ import { DAYS, DAY_TIME_SLOTS } from '@/app/lib/constants';
 export async function GET() {
   try {
     // Get current student if authenticated
-    const currentStudent = await getCurrentStudent();
+    const currentStudent = await getAuthenticatedStudent();
     
     // Get all sessions with their booking counts
     const sessions = await prisma.session.findMany({
@@ -64,10 +64,10 @@ export async function GET() {
 /**
  * GET /api/sessions/availability - Get session availability grouped by day
  */
-export async function getAvailability() {
+async function getAvailability(request) {
   try {
     // Get current student if authenticated
-    const currentStudent = await getCurrentStudent();
+    const currentStudent = await getAuthenticatedStudent();
     
     // Calculate availability by day and time slot
     const availability = {};

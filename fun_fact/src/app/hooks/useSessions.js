@@ -34,6 +34,13 @@ export default function useSessions() {
       fetchSessions();
     }
   }, [isAuthenticated, fetchSessions]);
+  
+  // Create a function to refresh sessions that components can call
+  const refreshSessions = useCallback(() => {
+    if (isAuthenticated) {
+      fetchSessions();
+    }
+  }, [isAuthenticated, fetchSessions]);
 
   // Get sessions grouped by day
   const sessionsByDay = sessions.reduce((acc, session) => {
@@ -83,6 +90,7 @@ export default function useSessions() {
     loading,
     error,
     fetchSessions,
+    refreshSessions,
     formatSession,
     isDayFullyBooked,
     getBookedDays,

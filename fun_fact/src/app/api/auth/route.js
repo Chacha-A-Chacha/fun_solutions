@@ -1,6 +1,9 @@
+// file: src/app/api/auth/route.js
+// description: This API route handles authentication for students, including login, logout, and fetching the current user. It uses Prisma for database interactions and Zod for request validation.
+
 import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db';
-import { signToken, setAuthCookie, clearAuthCookie } from '@/app/lib/utils/auth';
+import { signToken, setAuthCookie, clearAuthCookie, getAuthToken, verifyToken } from '@/app/lib/utils/auth';
 import { validateStudentCredentials, studentLoginSchema } from '@/app/lib/utils/validation';
 import { SUCCESS_MESSAGES } from '@/app/lib/constants';
 
@@ -95,17 +98,50 @@ export async function DELETE() {
  */
 export async function GET(request) {
   try {
-    // This will be handled by middleware to check the token
-    const student = request.student;
+    // Get auth token from cookies directly
+    const token = getAuthToken();
     
-    if (!student) {
+    if (!token) {
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }
       );
     }
     
-    return NextResponse.json({ student });
+    // Verify token
+    const payload = await verifyToken(token);
+    
+    if (!payload) {
+      clearAuthCookie(); // Clear invalid token
+      return NextResponse.json(
+        { error: 'Invalid or expired token' },
+        { status: 401 }
+      );
+    }
+    
+    // Get fresh student data
+    const student = await prisma.student.findUnique({
+      where: { id: payload.id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phoneNumber: true
+      }
+    });
+    
+    if (!student) {
+      clearAuthCookie(); // Clear token if student no longer exists
+      return NextResponse.json(
+        { error: 'Student not found' },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json({ 
+      student,
+      message: 'Authentication successful'
+    });
   } catch (error) {
     console.error('Auth check error:', error);
     return NextResponse.json(

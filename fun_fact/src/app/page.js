@@ -50,13 +50,15 @@ export default function LoginPage() {
               Key details about booking your practical sessions
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className=" flex-col space-y-4">
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="item-1">
                 <AccordionTrigger>Session Availability</AccordionTrigger>
                 <AccordionContent>
                   <ul className="list-disc pl-4 space-y-2 text-sm text-gray-600">
-                    <li>Available Monday-Thursday: 8-10am, 10am-12pm, 1-3pm, 3-5pm</li>
+                    <li>
+                      Available Monday-Thursday: 8-10am, 10am-12pm, 1-3pm, 3-5pm
+                    </li>
                     <li>Weekend slots: 9-11am, 11am-1pm, 2-4pm, 4-6pm</li>
                   </ul>
                 </AccordionContent>
@@ -73,42 +75,39 @@ export default function LoginPage() {
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
+
+            <div className="text-sm items-end text-gray-500">
+              <a
+                href="/instructor?instructor_key=demo_instructor_access"
+                className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+              >
+                Instructor Dashboard <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Footer */}
       <footer className="mt-12 text-center">
-        <p className="text-sm text-gray-500">
-          &copy; {new Date().getFullYear()} Chacha Technologies. All rights reserved.
-        </p>
-        <div className="text-sm text-gray-500">
-
-        <a 
-            href="/instructor?instructor_key=demo_instructor_access" 
-            className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-          >
-            Instructor Dashboard <ExternalLink className="w-4 h-4" />
-        </a>
-        </div>
         <div className="flex justify-center items-center space-x-4 mt-4">
-          <a 
-            href="https://www.chach-a.com" 
-            target="_blank" 
+          <a
+            href="https://www.chach-a.com"
+            target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg"
           >
             <span className="text-xs text-gray-600 group-hover:text-gray-800 transition-colors">
               Powered by
             </span>
-            <img 
-              src="https://www.chach-a.com/logoMark.svg" 
-              alt="Chacha Technologies Logo" 
-              className="transform h-7 w-auto group-hover:scale-110 transition-transform duration-300" 
+            <img
+              src="https://www.chach-a.com/logoMark.svg"
+              alt="Chacha Technologies Logo"
+              className="transform h-7 w-auto group-hover:scale-110 transition-transform duration-300"
             />
-            <span className="text-sm font-medium text-gray-800 group-hover:text-black">
+            {/* <span className="text-sm font-medium text-gray-800 group-hover:text-black">
               Chacha Technologies
-            </span>
+            </span> */}
           </a>
         </div>
       </footer>
