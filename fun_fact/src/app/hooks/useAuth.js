@@ -23,12 +23,41 @@ export function AuthProvider({ children }) {
     const checkAuth = async () => {
       try {
         setLoading(true);
-        const { data } = await axios.get('/api/auth');
-        setStudent(data.student);
-        // Don't show success toast on initial auth check - only for explicit login
+        // Add a retry mechanism for better reliability
+        const maxRetries = 3;
+        let attempts = 0;
+        let success = false;
+        
+        while (attempts < maxRetries && !success) {
+          try {
+            const { data } = await axios.get('/api/auth', {
+              // Prevent caching issues
+              headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+              }
+            });
+            
+            setStudent(data.student);
+            success = true;
+            // Don't show success toast on initial auth check
+          } catch (error) {
+            attempts++;
+            if (attempts >= maxRetries) {
+              throw error;
+            }
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        }
       } catch (error) {
-        // Not authenticated
-        setStudent(null);
+        console.error('Auth check failed:', error);
+        // Only clear student state if we get a clear "not authenticated" response
+        if (error.response && error.response.status === 401) {
+          setStudent(null);
+        }
+        // For other errors, we don't clear the state to prevent unnecessary logouts
       } finally {
         setLoading(false);
       }
