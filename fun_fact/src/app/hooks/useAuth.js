@@ -1,3 +1,6 @@
+// file: src/app/hooks/useAuth.js
+// description: This file contains the AuthProvider and useAuth hook for managing authentication state in a React application. It uses Context API to provide authentication state and methods to the rest of the app.
+
 'use client';
 
 import { createContext, useContext, useState, useEffect } from 'react';
@@ -12,15 +15,17 @@ const AuthContext = createContext({});
 export function AuthProvider({ children }) {
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loginInProgress, setLoginInProgress] = useState(false);
   const router = useRouter();
 
   // Check if user is already logged in
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        setLoading(true);
         const { data } = await axios.get('/api/auth');
         setStudent(data.student);
-        toast.success(data.message);
+        // Don't show success toast on initial auth check - only for explicit login
       } catch (error) {
         // Not authenticated
         setStudent(null);
@@ -32,21 +37,27 @@ export function AuthProvider({ children }) {
     checkAuth();
   }, []);
 
-  // Login function
+  // Login function - immediately navigate and show loader in dashboard
   const login = async (credentials) => {
     try {
-      setLoading(true);
+      setLoginInProgress(true);
+      
+      // First navigate to dashboard with loading state
+      router.push('/dashboard');
+      
+      // Then perform the login request
       const { data } = await axios.post('/api/auth', credentials);
       setStudent(data.student);
       toast.success(data.message);
-      router.push('/dashboard');
       return true;
     } catch (error) {
       const message = error.response?.data?.error || 'Login failed';
       toast.error(message);
+      // Navigate back to login page on failure
+      router.push('/');
       return false;
     } finally {
-      setLoading(false);
+      setLoginInProgress(false);
     }
   };
 
@@ -69,6 +80,7 @@ export function AuthProvider({ children }) {
   const value = {
     student,
     loading,
+    loginInProgress,
     login,
     logout,
     isAuthenticated: !!student
