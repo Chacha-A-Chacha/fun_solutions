@@ -1,3 +1,6 @@
+// file: src/app/api/instructor/sessions/route.js
+// description: This API route handles the retrieval of all instructor sessions, including enrolled students and analytics.
+
 import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db';
 import { DAY_NAMES, TIME_SLOT_NAMES } from '@/app/lib/constants';

@@ -1,3 +1,6 @@
+// file: src/app/api/instructor/layout.js
+// description: This file defines the layout for the instructor dashboard, including the metadata and the Toaster component for notifications.
+
 import { Toaster } from 'react-hot-toast';
 
 export const metadata = {

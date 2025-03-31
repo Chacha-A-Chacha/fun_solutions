@@ -1,3 +1,6 @@
+// file: src/app/layout.js
+// description: This file defines the root layout for the application, including global styles and authentication context.
+
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from './hooks/useAuth';

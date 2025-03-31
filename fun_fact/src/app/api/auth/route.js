@@ -57,7 +57,9 @@ export async function POST(request) {
       message: SUCCESS_MESSAGES.LOGIN_SUCCESS,
       student: {
         id: student.id,
-        email: student.email
+        email: student.email,
+        name: student.name,
+        phoneNumber: student.phoneNumber
       }
     });
   } catch (error) {

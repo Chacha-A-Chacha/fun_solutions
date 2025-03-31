@@ -1,3 +1,6 @@
+// file: src/app/api/bookings/route.js
+// description: This API route handles booking management for students, including creating and retrieving bookings. It uses Prisma for database interactions and Zod for request validation.
+
 import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db';
 import { withAuth } from '@/app/lib/utils/auth';
@@ -117,58 +120,6 @@ async function getBookings(request) {
   }
 }
 
-/**
- * DELETE /api/bookings/:id - Cancel a booking
- */
-async function deleteBooking(request) {
-  try {
-    // Get student from auth middleware
-    const student = request.student;
-    
-    // Get booking ID from URL
-    const url = new URL(request.url);
-    const bookingId = url.pathname.split('/').pop();
-    
-    if (!bookingId) {
-      return NextResponse.json(
-        { error: 'Booking ID is required' },
-        { status: 400 }
-      );
-    }
-    
-    // Check if booking exists and belongs to the student
-    const booking = await prisma.booking.findFirst({
-      where: {
-        id: bookingId,
-        studentId: student.id
-      }
-    });
-    
-    if (!booking) {
-      return NextResponse.json(
-        { error: 'Booking not found or not authorized' },
-        { status: 404 }
-      );
-    }
-    
-    // Delete the booking
-    await prisma.booking.delete({
-      where: { id: bookingId }
-    });
-    
-    return NextResponse.json({
-      message: SUCCESS_MESSAGES.BOOKING_CANCELLED
-    });
-  } catch (error) {
-    console.error('Booking deletion error:', error);
-    return NextResponse.json(
-      { error: 'Failed to cancel booking' },
-      { status: 500 }
-    );
-  }
-}
-
-// Apply auth middleware to all routes
+// Apply auth middleware to the routes
 export const POST = withAuth(createBooking);
 export const GET = withAuth(getBookings);
-export const DELETE = withAuth(deleteBooking);

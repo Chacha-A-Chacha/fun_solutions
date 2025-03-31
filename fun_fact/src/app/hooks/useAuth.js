@@ -20,6 +20,7 @@ export function AuthProvider({ children }) {
       try {
         const { data } = await axios.get('/api/auth');
         setStudent(data.student);
+        toast.success(data.message);
       } catch (error) {
         // Not authenticated
         setStudent(null);
