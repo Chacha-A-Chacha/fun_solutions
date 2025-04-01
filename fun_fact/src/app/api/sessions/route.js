@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/app/lib/db';
+import prisma from '@/app/lib/db/prisma-client';
 import { withAuth, getAuthenticatedStudent } from '@/app/lib/utils/auth';
 import { DAYS, DAY_TIME_SLOTS } from '@/app/lib/constants';
 

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import prisma from '../db';
+import prisma from '../db/prisma-client';
 import { SESSION_CONSTRAINTS, ERROR_MESSAGES } from '../constants';
 
 // Student login validation schema

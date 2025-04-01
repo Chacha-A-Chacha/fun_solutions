@@ -2,7 +2,7 @@
 // description: This API route handles operations on specific bookings, including deleting bookings by ID.
 
 import { NextResponse } from 'next/server';
-import prisma from '@/app/lib/db';
+import prisma from '@/app/lib/db/prisma-client';
 import { withAuth } from '@/app/lib/utils/auth';
 import { SUCCESS_MESSAGES } from '@/app/lib/constants';
 

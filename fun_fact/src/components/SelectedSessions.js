@@ -7,6 +7,7 @@ import useSessions from '@/app/hooks/useSessions';
 
 export default function SelectedSessions() {
   const { bookings, cancelBooking, loading, bookingInProgress, formatBooking } = useBookings();
+  const { refreshSessions } = useSessions(); // Get refreshSessions directly
   const [cancelingId, setCancelingId] = useState(null);
 
   // Handle booking cancellation

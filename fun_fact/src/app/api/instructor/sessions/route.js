@@ -2,7 +2,7 @@
 // description: This API route handles the retrieval of all instructor sessions, including enrolled students and analytics.
 
 import { NextResponse } from 'next/server';
-import prisma from '@/app/lib/db';
+import prisma from '@/app/lib/db/prisma-client';
 import { DAY_NAMES, TIME_SLOT_NAMES } from '@/app/lib/constants';
 
 /**

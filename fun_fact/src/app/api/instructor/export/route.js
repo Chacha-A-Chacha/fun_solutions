@@ -3,7 +3,7 @@
 // Description: This API route exports session and enrollment data as a CSV file. It retrieves session data from the database, formats it into CSV format, and sends it as a downloadable file in the response. The CSV includes details about each session, including day, time, capacity, enrolled students, and their contact information.
 
 import { NextResponse } from 'next/server';
-import prisma from '@/app/lib/db';
+import prisma from '@/app/lib/db/prisma-client';
 import { DAY_NAMES, TIME_SLOT_NAMES } from '@/app/lib/constants';
 
 /**

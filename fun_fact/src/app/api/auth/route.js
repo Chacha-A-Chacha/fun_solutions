@@ -2,7 +2,7 @@
 // description: This API route handles authentication for students, including login, logout, and fetching the current user. It uses Prisma for database interactions and Zod for request validation.
 
 import { NextResponse } from 'next/server';
-import prisma from '@/app/lib/db';
+import prisma from '@/app/lib/db/prisma-client';
 import { signToken, setAuthCookie, clearAuthCookie, getAuthToken, verifyToken } from '@/app/lib/utils/auth';
 import { validateStudentCredentials, studentLoginSchema } from '@/app/lib/utils/validation';
 import { SUCCESS_MESSAGES } from '@/app/lib/constants';
