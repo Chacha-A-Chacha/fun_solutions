@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { DAY_NAMES, TIME_SLOT_NAMES } from '@/app/lib/constants';
 import useBookings from '@/app/hooks/useBookings';
+import useSessions from '@/app/hooks/useSessions';
 
 export default function SelectedSessions() {
   const { bookings, cancelBooking, loading, bookingInProgress, formatBooking } = useBookings();
@@ -14,11 +15,15 @@ export default function SelectedSessions() {
     
     setCancelingId(bookingId);
     try {
-      await cancelBooking(bookingId);
+      const success = await cancelBooking(bookingId);
+      if (success && refreshSessions) {
+        refreshSessions(); // Use it here with a safety check
+      }
     } finally {
       setCancelingId(null);
     }
   };
+
 
   if (loading) {
     return (

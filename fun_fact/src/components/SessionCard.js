@@ -25,7 +25,10 @@ export default function SessionCard({ session, refreshSessions }) {
     
     setIsBooking(true);
     try {
-      await bookSession(id);
+      const success = await bookSession(id);
+      if (success && refreshSessions) {
+        refreshSessions(); // Use it here with a safety check
+      }
     } finally {
       setIsBooking(false);
     }
