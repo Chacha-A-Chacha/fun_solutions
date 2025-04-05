@@ -42,8 +42,8 @@ export default function AuthForm() {
             {...register('id', { 
               required: 'Student ID is required',
               pattern: {
-                value: /^DR-\d{4}-\d{2}$/,
-                message: 'Invalid ID format. Use format: DR-XXXX-XX'
+                value: /^DR-\d{4,5}-\d{2}$/,
+                message: 'Invalid ID format. Use format: DR-XXXXX-XX'
               }
             })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"

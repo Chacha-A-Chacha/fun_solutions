@@ -1,101 +1,120 @@
+// file: src/components/SessionCard.js
+// description: This component represents a session card that displays session details and allows users to book or cancel sessions. It uses custom hooks for managing bookings and sessions, and includes loading states for better user experience.
+
+
 'use client';
 
 import { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Users, Clock, CheckCircle } from 'lucide-react';
 import { TIME_SLOT_NAMES } from '@/app/lib/constants';
 import useBookings from '@/app/hooks/useBookings';
 
-export default function SessionCard({ session, refreshSessions }) {
-    const { bookSession, isSessionBooked, remainingSlots, bookingInProgress } = useBookings();
-    const [isBooking, setIsBooking] = useState(false);
+export default function SessionCard({ session }) {
+  const { bookSession, isSessionBooked, isDayBooked, remainingSlots, bookingInProgress } = useBookings();
+  const [isBooking, setIsBooking] = useState(false);
   
-  const {
-    id,
-    timeSlot,
-    capacity,
-    availableSpots,
-    isAvailable,
-  } = session;
+  // Check if this specific session is booked
+  const booked = isSessionBooked(session.id);
   
-  const isBooked = isSessionBooked(id);
-  const canBook = isAvailable && !isBooked && remainingSlots > 0;
+  // Check if another session on the same day is booked
+  const dayAlreadyBooked = !booked && isDayBooked(session.day);
+  
+  // Check if the user has reached their booking limit
+  const hasReachedBookingLimit = remainingSlots <= 0;
+  
+  // Calculate availability
+  const spotsRemaining = session.capacity - session.bookings.length;
+  const isFull = spotsRemaining <= 0;
+  
+  // Check if the button should be disabled
+  const disabled = isFull || booked || dayAlreadyBooked || hasReachedBookingLimit || isBooking || bookingInProgress;
   
   // Handle booking
-  const handleBooking = async () => {
-    if (!canBook || isBooking) return;
+  const handleBook = async () => {
+    if (disabled) return;
     
     setIsBooking(true);
     try {
-      const success = await bookSession(id);
-      if (success && refreshSessions) {
-        refreshSessions(); // Use it here with a safety check
-      }
+      await bookSession(session);
+      // No need to refresh sessions, handled by optimistic UI
     } finally {
       setIsBooking(false);
     }
   };
   
-  // Determine card background color based on availability
-  const getBackgroundColor = () => {
-    if (isBooked) return 'bg-green-100 border-green-500';
-    if (!isAvailable) return 'bg-gray-100 border-gray-300';
-    return 'bg-white border-gray-200 hover:border-blue-300';
-  };
-  
-  // Get availability text and color
-  const getAvailabilityInfo = () => {
-    if (isBooked) {
-      return {
-        text: 'Booked',
-        color: 'text-green-700'
-      };
-    }
-    
-    if (availableSpots === 0) {
-      return {
-        text: 'Full',
-        color: 'text-red-600'
-      };
-    }
-    
-    return {
-      text: `${availableSpots}/${capacity} available`,
-      color: availableSpots < 2 ? 'text-orange-600' : 'text-blue-600'
-    };
-  };
-  
-  const availabilityInfo = getAvailabilityInfo();
-  
   return (
-    <div 
-      className={`${getBackgroundColor()} p-4 border rounded-lg transition duration-200 ease-in-out ${canBook ? 'cursor-pointer' : 'cursor-default'}`}
-      onClick={handleBooking}
-    >
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-lg font-medium">{TIME_SLOT_NAMES[timeSlot]}</h3>
-        <span className={`text-sm font-medium ${availabilityInfo.color}`}>
-          {availabilityInfo.text}
-        </span>
-      </div>
-      
-      {isBooked && (
-        <div className="flex items-center mt-2">
-          <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-            <svg className="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            Your Selection
-          </span>
+    <Card className={`${booked ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}>
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start mb-2">
+          <h3 className="font-medium">
+            {TIME_SLOT_NAMES[session.timeSlot]}
+          </h3>
+          
+          {booked && (
+            <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full flex items-center">
+              <CheckCircle className="w-3 h-3 mr-1" />
+              Booked
+            </span>
+          )}
         </div>
-      )}
-      
-      {canBook && (
-        <button
-          className="mt-2 w-full px-3 py-1 text-sm text-blue-700 border border-blue-300 rounded-md hover:bg-blue-50"
-          disabled={isBooking || bookingInProgress}
-        >
-          {isBooking ? 'Booking...' : 'Select This Session'}
-        </button>
-      )}
-    </div>
+        
+        <div className="space-y-2 mb-3">
+          {/* Availability indicator */}
+          <div className="flex items-center text-sm text-gray-600">
+            <Users className="w-4 h-4 mr-1" />
+            <span>
+              {isFull 
+                ? 'Full' 
+                : `${spotsRemaining} spot${spotsRemaining !== 1 ? 's' : ''} left`}
+            </span>
+          </div>
+          
+          {/* Duration indicator */}
+          <div className="flex items-center text-sm text-gray-600">
+            <Clock className="w-4 h-4 mr-1" />
+            <span>2 hours</span>
+          </div>
+        </div>
+        
+        {/* Book/Booked button */}
+        <div className="mt-2">
+          {booked ? (
+            <Button 
+              variant="outline" 
+              className="w-full bg-green-50 text-green-800 border-green-200 hover:bg-green-100 hover:text-green-900" 
+              disabled
+            >
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Booked
+            </Button>
+          ) : (
+            <Button
+              variant={dayAlreadyBooked ? "outline" : "default"}
+              className="w-full"
+              disabled={disabled}
+              onClick={handleBook}
+            >
+              {isBooking ? 'Booking...' : 'Book Session'}
+            </Button>
+          )}
+        </div>
+        
+        {/* Show explanation if day is already booked */}
+        {dayAlreadyBooked && (
+          <p className="text-xs text-amber-600 mt-2">
+            You already have a session on this day
+          </p>
+        )}
+        
+        {/* Show explanation if max bookings reached */}
+        {!dayAlreadyBooked && hasReachedBookingLimit && !booked && (
+          <p className="text-xs text-amber-600 mt-2">
+            You've reached your session limit
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 }

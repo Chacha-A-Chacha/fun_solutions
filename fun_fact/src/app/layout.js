@@ -1,9 +1,9 @@
 // file: src/app/layout.js
-// description: This file defines the root layout for the application, including global styles and authentication context.
+// description: This file defines the root layout for the application, including global styles and providers.
 
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { AuthProvider } from './hooks/useAuth';
+import { Providers } from './providers';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -16,9 +16,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        <AuthProvider>
+        <Providers>
           {children}
-        </AuthProvider>
+        </Providers>
       </body>
     </html>
   );

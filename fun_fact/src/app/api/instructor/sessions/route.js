@@ -1,5 +1,5 @@
 // file: src/app/api/instructor/sessions/route.js
-// description: This API route handles the retrieval of all instructor sessions, including enrolled students and analytics.
+// description: Updated API route with support for session enabled/disabled status
 
 import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db/prisma-client';
@@ -34,7 +34,10 @@ export async function GET() {
     
     // Format the session data for display
     const formattedSessions = sessions.map(session => {
-      const { day, timeSlot, capacity, bookings } = session;
+      const { day, timeSlot, capacity, bookings, metadata } = session;
+      
+      // Check if session is enabled (default to true if not specified)
+      const isEnabled = metadata?.isEnabled !== false;
       
       return {
         id: session.id,
@@ -46,6 +49,7 @@ export async function GET() {
         enrolledCount: bookings.length,
         availableSpots: capacity - bookings.length,
         fillPercentage: Math.round((bookings.length / capacity) * 100),
+        isEnabled: isEnabled,
         students: bookings.map(booking => ({
           id: booking.student.id,
           name: booking.student.name,
@@ -79,17 +83,24 @@ export async function GET() {
  * @returns {Object} - Analytics object
  */
 function calculateAnalytics(sessions) {
+  // Only include enabled sessions in analytics
+  const enabledSessions = sessions.filter(s => s.isEnabled !== false);
+  
   // Total capacity and enrollment
-  const totalCapacity = sessions.reduce((sum, session) => sum + session.capacity, 0);
-  const totalEnrolled = sessions.reduce((sum, session) => sum + session.enrolledCount, 0);
-  const overallFillRate = Math.round((totalEnrolled / totalCapacity) * 100);
+  const totalCapacity = enabledSessions.reduce((sum, session) => sum + session.capacity, 0);
+  const totalEnrolled = enabledSessions.reduce((sum, session) => sum + session.enrolledCount, 0);
+  const overallFillRate = totalCapacity > 0 ? Math.round((totalEnrolled / totalCapacity) * 100) : 0;
+  
+  // Include disabled sessions count
+  const disabledSessionsCount = sessions.length - enabledSessions.length;
   
   // Find most and least popular sessions
-  const mostPopularSession = [...sessions].sort((a, b) => b.fillPercentage - a.fillPercentage)[0];
-  const leastPopularSession = [...sessions].sort((a, b) => a.fillPercentage - b.fillPercentage)[0];
+  const sortedByFill = [...enabledSessions].sort((a, b) => b.fillPercentage - a.fillPercentage);
+  const mostPopularSession = sortedByFill.length > 0 ? sortedByFill[0] : null;
+  const leastPopularSession = sortedByFill.length > 0 ? sortedByFill[sortedByFill.length - 1] : null;
   
   // Day popularity
-  const dayEnrollment = sessions.reduce((acc, session) => {
+  const dayEnrollment = enabledSessions.reduce((acc, session) => {
     if (!acc[session.day]) {
       acc[session.day] = {
         day: session.day,
@@ -107,11 +118,11 @@ function calculateAnalytics(sessions) {
   // Calculate fill rate for each day
   const dayPopularity = Object.values(dayEnrollment).map(day => ({
     ...day,
-    fillRate: Math.round((day.enrolled / day.capacity) * 100)
+    fillRate: day.capacity > 0 ? Math.round((day.enrolled / day.capacity) * 100) : 0
   })).sort((a, b) => b.fillRate - a.fillRate);
   
   // Time slot popularity
-  const timeSlotEnrollment = sessions.reduce((acc, session) => {
+  const timeSlotEnrollment = enabledSessions.reduce((acc, session) => {
     if (!acc[session.timeSlot]) {
       acc[session.timeSlot] = {
         timeSlot: session.timeSlot,
@@ -129,19 +140,20 @@ function calculateAnalytics(sessions) {
   // Calculate fill rate for each time slot
   const timeSlotPopularity = Object.values(timeSlotEnrollment).map(slot => ({
     ...slot,
-    fillRate: Math.round((slot.enrolled / slot.capacity) * 100)
+    fillRate: slot.capacity > 0 ? Math.round((slot.enrolled / slot.capacity) * 100) : 0
   })).sort((a, b) => b.fillRate - a.fillRate);
   
   // Count unique students
   const uniqueStudentIds = new Set();
-  sessions.forEach(session => {
+  enabledSessions.forEach(session => {
     session.students.forEach(student => {
       uniqueStudentIds.add(student.id);
     });
   });
   
   return {
-    totalSessions: sessions.length,
+    totalSessions: enabledSessions.length,
+    disabledSessionsCount,
     totalCapacity,
     totalEnrolled,
     availableSpots: totalCapacity - totalEnrolled,

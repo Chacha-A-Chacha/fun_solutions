@@ -6,7 +6,7 @@ import { SESSION_CONSTRAINTS, ERROR_MESSAGES } from '../constants';
 export const studentLoginSchema = z.object({
   id: z.string()
     .min(1, 'Student ID is required')
-    .regex(/^DR-\d{4}-\d{2}$/, 'Invalid ID format. Should match pattern: DR-XXXX-XX'),
+    .regex(/^DR-\d{4,5}-\d{2}$/, 'Invalid ID format. Should match pattern: DR-XXXX-XX'),
   email: z.string().email('Invalid email format')
 });
 

@@ -1,11 +1,22 @@
 // file: src/app/api/bookings/route.js
-// description: This API route handles booking management for students, including creating and retrieving bookings. It uses Prisma for database interactions and Zod for request validation.
+// Improved API route for bookings with better error handling and optimistic UI support
 
 import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db/prisma-client';
 import { withAuth } from '@/app/lib/utils/auth';
 import { validateSessionBooking, sessionBookingSchema } from '@/app/lib/utils/validation';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '@/app/lib/constants';
+
+/**
+ * Response helper functions
+ */
+const createErrorResponse = (message, status = 400) => {
+  return NextResponse.json({ error: message }, { status });
+};
+
+const createSuccessResponse = (data, message, status = 200) => {
+  return NextResponse.json({ ...data, message }, { status });
+};
 
 /**
  * POST /api/bookings - Create a new booking
@@ -16,15 +27,12 @@ async function createBooking(request) {
     const student = request.student;
     
     // Parse request body
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     
     // Validate request body against schema
     const result = sessionBookingSchema.safeParse(body);
     if (!result.success) {
-      return NextResponse.json(
-        { error: result.error.errors[0].message },
-        { status: 400 }
-      );
+      return createErrorResponse(result.error.errors[0].message);
     }
     
     const { sessionId } = result.data;
@@ -33,10 +41,17 @@ async function createBooking(request) {
     const validationResult = await validateSessionBooking(student.id, sessionId);
     
     if (!validationResult.valid) {
-      return NextResponse.json(
-        { error: validationResult.error },
-        { status: 400 }
-      );
+      return createErrorResponse(validationResult.error);
+    }
+    
+    // Get session details before booking
+    const sessionBefore = await prisma.session.findUnique({
+      where: { id: sessionId },
+      select: { day: true, timeSlot: true }
+    });
+    
+    if (!sessionBefore) {
+      return createErrorResponse('Session not found');
     }
     
     // Create booking with transaction to prevent race conditions
@@ -57,28 +72,37 @@ async function createBooking(request) {
         data: {
           student: { connect: { id: student.id } },
           session: { connect: { id: sessionId } }
-        },
-        include: {
-          session: true
         }
       });
     });
     
-    return NextResponse.json({
-      message: SUCCESS_MESSAGES.BOOKING_CREATED,
-      booking: {
-        id: booking.id,
-        sessionId: booking.sessionId,
-        day: booking.session.day,
-        timeSlot: booking.session.timeSlot
-      }
-    });
+    // Format booking with session details for client
+    const formattedBooking = {
+      id: booking.id,
+      sessionId,
+      day: sessionBefore.day,
+      timeSlot: sessionBefore.timeSlot,
+      createdAt: booking.createdAt
+    };
+    
+    return createSuccessResponse(
+      { booking: formattedBooking },
+      SUCCESS_MESSAGES.BOOKING_CREATED
+    );
   } catch (error) {
     console.error('Booking creation error:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to create booking' },
-      { status: 500 }
-    );
+    
+    // Handle specific error cases
+    if (error.message === ERROR_MESSAGES.SESSION_FULL) {
+      return createErrorResponse(ERROR_MESSAGES.SESSION_FULL);
+    }
+    
+    // Handle unique constraint violations
+    if (error.code === 'P2002') {
+      return createErrorResponse('You have already booked this session');
+    }
+    
+    return createErrorResponse(error.message || 'Failed to create booking', 500);
   }
 }
 
@@ -90,7 +114,7 @@ async function getBookings(request) {
     // Get student from auth middleware
     const student = request.student;
     
-    // Get all bookings for the student
+    // Get all bookings for the student with their sessions
     const bookings = await prisma.booking.findMany({
       where: { studentId: student.id },
       include: {
@@ -113,10 +137,7 @@ async function getBookings(request) {
     return NextResponse.json({ bookings: formattedBookings });
   } catch (error) {
     console.error('Error fetching bookings:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch bookings' },
-      { status: 500 }
-    );
+    return createErrorResponse('Failed to fetch bookings', 500);
   }
 }
 

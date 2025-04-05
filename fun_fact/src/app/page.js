@@ -1,3 +1,7 @@
+// file: src/app/page.js
+// description: This is the main login page for the Student Session Scheduler application. It includes a login form and session guidelines.
+
+
 import AuthForm from '@/components/AuthForm';
 import { 
   Card, 

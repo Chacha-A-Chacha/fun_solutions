@@ -1,8 +1,13 @@
+// file: src/app/dashboard/page.js
+// description: This component serves as the dashboard for students, displaying their selected sessions and available sessions for booking. It includes a header with user information, a session calendar, and a list of selected sessions. The component uses React hooks for state management and Next.js for routing. It also integrates with a toast notification system for error handling.
+//     const timeSlotName = TIME_SLOT_NAMES[session.timeSlot];
+
 'use client';
-import { useEffect, useMemo } from 'react';
+
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/hooks/useAuth';
-import { Toaster } from 'react-hot-toast';
+import { useSessionData } from '@/app/hooks/useSessionData';
 import { 
   Card, 
   CardContent, 
@@ -24,7 +29,8 @@ import {
   CalendarCheck, 
   Info, 
   Phone, 
-  UserCircle2 
+  RefreshCw,
+  Clock
 } from 'lucide-react';
 import SessionCalendar from '@/components/SessionCalendar';
 import SelectedSessions from '@/components/SelectedSessions';
@@ -32,7 +38,6 @@ import Image from 'next/image';
 
 // Function to generate avatar abbreviation
 const getNameAbbreviation = (name = '') => {
-  // Handle null or undefined input
   if (!name) return 'UN';
   
   return name
@@ -45,21 +50,25 @@ const getNameAbbreviation = (name = '') => {
 
 // Function to generate avatar URL
 const getAvatarUrl = (student) => {
-  // Priority 1: If student has a direct avatar URL
   if (student?.avatarUrl) return student.avatarUrl;
 
-  // Priority 2: UI Avatars service
   if (student?.name) {
     const name = encodeURIComponent(student.name);
     return `https://ui-avatars.com/api/?name=${name}&background=0D8AFD&color=fff&size=128`;
   }
 
-  // Fallback to null if no avatar can be generated
   return null;
 };
 
 export default function Dashboard() {
-  const { isAuthenticated, student, loading, logout } = useAuth();
+  const { isAuthenticated, student, loading: authLoading, logout } = useAuth();
+  const { 
+    loading: dataLoading, 
+    lastRefresh, 
+    fetchAllData, 
+    remainingSlots
+  } = useSessionData();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const router = useRouter();
 
   // Generate name abbreviation
@@ -74,32 +83,76 @@ export default function Dashboard() {
     [student]
   );
 
+  // Format the last refresh time
+  const formattedLastRefresh = useMemo(() => {
+    if (!lastRefresh) return 'Never';
+    
+    // If within the last minute, show "Just now"
+    const diffMs = Date.now() - new Date(lastRefresh).getTime();
+    if (diffMs < 60000) return 'Just now';
+    
+    // If within the last hour, show minutes
+    if (diffMs < 3600000) {
+      const minutes = Math.floor(diffMs / 60000);
+      return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+    }
+    
+    // Otherwise show time
+    return new Date(lastRefresh).toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  }, [lastRefresh]);
+
+  // Handle manual refresh
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchAllData();
+    setIsRefreshing(false);
+  };
+
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       router.push('/');
     }
-  }, [isAuthenticated, loading, router]);
+  }, [isAuthenticated, authLoading, router]);
 
   // Show loading state
-  if (loading || !isAuthenticated) {
+  if (authLoading || !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-white">
-        <p className="text-gray-500 animate-pulse">Loading...</p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="text-gray-500 mt-4">Loading your dashboard...</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
-      <Toaster position="top-right" />
-      
       {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <CalendarCheck className="w-6 h-6 text-blue-600" />
             <h1 className="text-lg font-bold text-gray-900">Session Scheduler</h1>
+          </div>
+          
+          {/* Last refresh indicator */}
+          <div className="hidden md:flex items-center text-sm text-gray-500">
+            <Clock className="w-4 h-4 mr-1" />
+            <span>Last updated: {formattedLastRefresh}</span>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="ml-1 h-6 w-6 text-gray-400 hover:text-gray-600"
+            >
+              <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
           </div>
           
           {/* Student Profile Dropdown */}
@@ -164,7 +217,7 @@ export default function Dashboard() {
               <DropdownMenuSeparator />
               <DropdownMenuItem className="flex items-center space-x-2">
                 <Phone className="w-4 h-4 text-gray-500" />
-                <span>{student.phoneNumber}</span>
+                <span>{student.phoneNumber || 'No phone number'}</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
@@ -179,7 +232,6 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* Rest of the component remains the same as in previous version */}
       <main className="container mx-auto px-4 py-6 space-y-6">
         {/* Instructions Card */}
         <Card>
