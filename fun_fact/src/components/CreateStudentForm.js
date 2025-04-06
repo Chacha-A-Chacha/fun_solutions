@@ -23,7 +23,7 @@ import { Loader2 } from 'lucide-react';
 const studentFormSchema = z.object({
   id: z.string()
     .min(1, { message: 'Student ID is required' })
-    .regex(/^DR-\d{4}-\d{2}$/, { 
+    .regex(/^DR-\d{4,5}-\d{2}$/, { 
       message: 'Student ID must be in format DR-XXXX-XX' 
     }),
   name: z.string()
