@@ -6,7 +6,7 @@ import { z } from 'zod';
 const createStudentSchema = z.object({
   id: z.string()
     .min(1, 'Student ID is required')
-    .regex(/^DR-\d{4}-\d{2}$/, 'Student ID must be in format DR-XXXX-XX'),
+    .regex(/^DR-\d{4,5}-\d{2}$/, 'Student ID must be in format DR-XXXX-XX'),
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Invalid email format'),
   phoneNumber: z.string().optional()
