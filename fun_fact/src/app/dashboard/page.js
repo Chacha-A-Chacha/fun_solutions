@@ -251,7 +251,7 @@ export default function Dashboard() {
                 <ul className="space-y-2 text-sm text-gray-700">
                   <li className="flex items-center">
                     <span className="mr-2">•</span>
-                    Select sessions on 2 different days
+                    Select sessions on 1 available day
                   </li>
                   <li className="flex items-center">
                     <span className="mr-2">•</span>

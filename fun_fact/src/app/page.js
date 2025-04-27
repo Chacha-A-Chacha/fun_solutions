@@ -71,7 +71,7 @@ export default function LoginPage() {
                 <AccordionTrigger>Booking Limits</AccordionTrigger>
                 <AccordionContent>
                   <ul className="list-disc pl-4 space-y-2 text-sm text-gray-600">
-                    <li>Select sessions on 2 different days</li>
+                    <li>Select sessions on 1 available day</li>
                     <li>One session per day</li>
                     <li>Maximum 4 students per session</li>
                     <li>Modify selections until all spots are filled</li>

@@ -60,8 +60,8 @@ export const DAYS = {
   
   // Session constraints
   export const SESSION_CONSTRAINTS = {
-    MAX_CAPACITY: 4,
-    MAX_DAYS_PER_STUDENT: 2,
+    MAX_CAPACITY: 6,
+    MAX_DAYS_PER_STUDENT: 1,
     MAX_SESSIONS_PER_DAY: 1
   };
   
