@@ -60,15 +60,15 @@ export const DAYS = {
   
   // Session constraints
   export const SESSION_CONSTRAINTS = {
-    MAX_CAPACITY: 2,
-    MAX_DAYS_PER_STUDENT: 3,
+    MAX_CAPACITY: 4,
+    MAX_DAYS_PER_STUDENT: 2,
     MAX_SESSIONS_PER_DAY: 1
   };
   
   // Error messages
   export const ERROR_MESSAGES = {
     SESSION_FULL: 'This session is already at full capacity.',
-    MAX_DAYS_REACHED: 'You can only select up to 3 days.',
+    MAX_DAYS_REACHED: 'You can only select up to 2 days.',
     DAY_ALREADY_BOOKED: 'You already have a session booked for this day.',
     INVALID_CREDENTIALS: 'Invalid student ID or email.',
     SYSTEM_ERROR: 'Something went wrong. Please try again later.',
