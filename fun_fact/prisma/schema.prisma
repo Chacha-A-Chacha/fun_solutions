@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
   relationMode = "prisma"
 }
@@ -52,15 +52,16 @@ enum Day {
   TUESDAY
   WEDNESDAY
   THURSDAY
+  FRIDAY
   SATURDAY
   SUNDAY
 }
 
 enum TimeSlot {
-  SLOT_8_10   // Monday-Thursday: 8-10am
-  SLOT_10_12  // Monday-Thursday: 10am-12pm
-  SLOT_13_15  // Monday-Thursday: 1-3pm
-  SLOT_15_17  // Monday-Thursday: 3-5pm
+  SLOT_8_10   // Monday-Friday: 8-10am
+  SLOT_10_12  // Monday-Friday: 10am-12pm
+  SLOT_13_15  // Monday-Friday: 1-3pm
+  SLOT_15_17  // Monday-Friday: 3-5pm
   SLOT_9_11   // Weekend: 9-11am
   SLOT_11_13  // Weekend: 11am-1pm
   SLOT_14_16  // Weekend: 2-4pm
