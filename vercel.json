@@ -1,0 +1,6 @@
+{
+  "crons": [{
+    "path": "/api/admin/reset-bookings",
+    "schedule": "59 13 * * 0"
+  }]
+}
