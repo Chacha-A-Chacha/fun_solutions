@@ -6,19 +6,18 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
-  relationMode = "prisma"
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
 }
 
 model Student {
-  id           String    @id // Student ID like DR-4824-25
-  email        String    @unique
-  name         String
-  phoneNumber  String?
-  bookings     Booking[]
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id          String    @id // Student ID like DR-4824-25
+  email       String    @unique
+  name        String
+  phoneNumber String?
+  bookings    Booking[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Session {
@@ -58,12 +57,12 @@ enum Day {
 }
 
 enum TimeSlot {
-  SLOT_8_10   // Monday-Friday: 8-10am
-  SLOT_10_12  // Monday-Friday: 10am-12pm
-  SLOT_13_15  // Monday-Friday: 1-3pm
-  SLOT_15_17  // Monday-Friday: 3-5pm
-  SLOT_9_11   // Weekend: 9-11am
-  SLOT_11_13  // Weekend: 11am-1pm
-  SLOT_14_16  // Weekend: 2-4pm
-  SLOT_16_18  // Weekend: 4-6pm
+  SLOT_8_10 // Monday-Friday: 8-10am
+  SLOT_10_12 // Monday-Friday: 10am-12pm
+  SLOT_13_15 // Monday-Friday: 1-3pm
+  SLOT_15_17 // Monday-Friday: 3-5pm
+  SLOT_9_11 // Weekend: 9-11am
+  SLOT_11_13 // Weekend: 11am-1pm
+  SLOT_14_16 // Weekend: 2-4pm
+  SLOT_16_18 // Weekend: 4-6pm
 }

@@ -44,17 +44,32 @@ export function AuthProvider({ children }) {
             // Don't show success toast on initial auth check
           } catch (error) {
             attempts++;
+
+            // Handle 401 (not authenticated) - this is expected on first visit
+            if (error.response?.status === 401) {
+              setStudent(null);
+              success = true; // Don't retry for 401
+              // Don't log this as an error - it's expected behavior
+              break;
+            }
+
+            // For other errors, retry if we haven't hit max attempts
             if (attempts >= maxRetries) {
               throw error;
             }
+
             // Wait before retrying
             await new Promise(resolve => setTimeout(resolve, 500));
           }
         }
       } catch (error) {
-        console.error('Auth check failed:', error);
+        // Only log actual errors, not 401s
+        if (error.response?.status !== 401) {
+          console.error('Auth check failed:', error);
+        }
+
         // Only clear student state if we get a clear "not authenticated" response
-        if (error.response && error.response.status === 401) {
+        if (error.response?.status === 401) {
           setStudent(null);
         }
         // For other errors, we don't clear the state to prevent unnecessary logouts
@@ -70,10 +85,10 @@ export function AuthProvider({ children }) {
   const login = async (credentials) => {
     try {
       setLoginInProgress(true);
-      
+
       // First navigate to dashboard with loading state
       router.push('/dashboard');
-      
+
       // Then perform the login request
       const { data } = await axios.post('/api/auth', credentials);
       setStudent(data.student);
@@ -99,7 +114,10 @@ export function AuthProvider({ children }) {
       toast.success('Logged out successfully');
       router.push('/');
     } catch (error) {
-      toast.error('Logout failed');
+      // Don't show error toast for logout failures - just redirect
+      console.error('Logout error:', error);
+      setStudent(null); // Clear state anyway
+      router.push('/');
     } finally {
       setLoading(false);
     }

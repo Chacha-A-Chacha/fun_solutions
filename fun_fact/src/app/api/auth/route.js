@@ -1,5 +1,5 @@
 // file: src/app/api/auth/route.js
-// description: This API route handles authentication for students, including login, logout, and fetching the current user. It uses Prisma for database interactions and Zod for request validation.
+// description: Fixed auth API route with async cookies support for Next.js 15
 
 import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db/prisma-client';
@@ -14,7 +14,7 @@ export async function POST(request) {
   try {
     // Parse request body
     const body = await request.json();
-    
+
     // Validate request body against schema
     const result = studentLoginSchema.safeParse(body);
     if (!result.success) {
@@ -23,39 +23,39 @@ export async function POST(request) {
         { status: 400 }
       );
     }
-    
+
     const { id, email } = result.data;
-    
+
     // Validate student credentials
     const validationResult = await validateStudentCredentials(id, email);
-    
+
     if (!validationResult.valid) {
       return NextResponse.json(
         { error: validationResult.error },
         { status: 401 }
       );
     }
-    
+
     // Create or update student record
     const student = await prisma.student.upsert({
         where: { id },
         update: { email },
-        create: { 
-          id, 
+        create: {
+          id,
           email,
           name: `Student ${id}` // Default name since it's required but not collected at login
         }
       });
-    
+
     // Generate JWT token
     const token = await signToken({
       id: student.id,
       email: student.email
     });
-    
-    // Set auth cookie
-    setAuthCookie(token);
-    
+
+    // Set auth cookie (now async)
+    await setAuthCookie(token);
+
     return NextResponse.json({
       message: SUCCESS_MESSAGES.LOGIN_SUCCESS,
       student: {
@@ -79,8 +79,9 @@ export async function POST(request) {
  */
 export async function DELETE() {
   try {
-    clearAuthCookie();
-    
+    // Clear auth cookie (now async)
+    await clearAuthCookie();
+
     return NextResponse.json({
       message: 'Logged out successfully'
     });
@@ -98,27 +99,27 @@ export async function DELETE() {
  */
 export async function GET(request) {
   try {
-    // Get auth token from cookies directly
-    const token = getAuthToken();
-    
+    // Get auth token from cookies (now async)
+    const token = await getAuthToken();
+
     if (!token) {
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }
       );
     }
-    
+
     // Verify token
     const payload = await verifyToken(token);
-    
+
     if (!payload) {
-      clearAuthCookie(); // Clear invalid token
+      await clearAuthCookie(); // Clear invalid token (now async)
       return NextResponse.json(
         { error: 'Invalid or expired token' },
         { status: 401 }
       );
     }
-    
+
     // Get fresh student data
     const student = await prisma.student.findUnique({
       where: { id: payload.id },
@@ -129,16 +130,16 @@ export async function GET(request) {
         phoneNumber: true
       }
     });
-    
+
     if (!student) {
-      clearAuthCookie(); // Clear token if student no longer exists
+      await clearAuthCookie(); // Clear token if student no longer exists (now async)
       return NextResponse.json(
         { error: 'Student not found' },
         { status: 404 }
       );
     }
-    
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       student,
       message: 'Authentication successful'
     });

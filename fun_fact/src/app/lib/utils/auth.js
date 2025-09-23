@@ -1,3 +1,6 @@
+// file: src/app/lib/utils/auth.js
+// description: Fixed auth utilities with async cookies() support for Next.js 15
+
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -44,14 +47,12 @@ export async function verifyToken(token) {
 }
 
 /**
- * Set the auth token cookie
- * @param {Object} response - The Next.js response object
+ * Set the auth token cookie - ASYNC version for Next.js 15
  * @param {string} token - The token to set
  */
-export function setAuthCookie(token) {
-  // Use an absurdly long cookie expiration to ensure it stays valid
-  // The JWT itself has a controlled expiration that will be enforced
-  cookies().set({
+export async function setAuthCookie(token) {
+  const cookieStore = await cookies();
+  cookieStore.set({
     name: AUTH_COOKIE,
     value: token,
     httpOnly: true,
@@ -63,38 +64,44 @@ export function setAuthCookie(token) {
 }
 
 /**
- * Clear the auth token cookie
+ * Clear the auth token cookie - ASYNC version for Next.js 15
  */
-export function clearAuthCookie() {
-  cookies().delete(AUTH_COOKIE);
+export async function clearAuthCookie() {
+  const cookieStore = await cookies();
+  cookieStore.delete(AUTH_COOKIE);
 }
 
 /**
- * Get the current auth token from cookies
- * @returns {string|null} - The auth token or null if not found
+ * Get the current auth token from cookies - ASYNC version for Next.js 15
+ * @returns {Promise<string|null>} - The auth token or null if not found
  */
-export function getAuthToken() {
-  return cookies().get(AUTH_COOKIE)?.value || null;
+export async function getAuthToken() {
+  try {
+    const cookieStore = await cookies();
+    return cookieStore.get(AUTH_COOKIE)?.value || null;
+  } catch (error) {
+    console.error('Error getting auth token:', error);
+    return null;
+  }
 }
 
 /**
- * Helper function to check authentication for API handlers
- * @param {NextRequest} request - The Next.js request
+ * Helper function to check authentication for API handlers - ASYNC version
  * @returns {Promise<Object|null>} - The authenticated student or null
  */
 export async function getAuthenticatedStudent() {
   try {
-    const token = getAuthToken();
+    const token = await getAuthToken();
     if (!token) return null;
     
     const payload = await verifyToken(token);
     if (!payload) {
-      clearAuthCookie();
+      await clearAuthCookie();
       return null;
     }
     
     // Import the prisma client here to avoid circular dependencies
-    const { default: prisma } = await import('@/app/lib/db');
+    const { default: prisma } = await import('@/app/lib/db/prisma-client');
     
     const student = await prisma.student.findUnique({
       where: { id: payload.id },
@@ -107,7 +114,7 @@ export async function getAuthenticatedStudent() {
     });
     
     if (!student) {
-      clearAuthCookie();
+      await clearAuthCookie();
       return null;
     }
     
@@ -119,7 +126,7 @@ export async function getAuthenticatedStudent() {
 }
 
 /**
- * Authentication middleware for API routes
+ * Authentication middleware for API routes - Updated for async cookies
  * @param {Function} handler - The route handler
  * @returns {Function} - The wrapped handler with auth check
  */
