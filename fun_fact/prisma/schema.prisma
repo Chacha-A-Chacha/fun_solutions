@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider     = "mysql"
+  provider     = "sqlite"
   url          = env("DATABASE_URL")
 }
 
@@ -44,6 +44,14 @@ model Booking {
 
   @@unique([studentId, sessionId])
   @@index([studentId])
+}
+
+model SystemLog {
+  id        String   @id @default(uuid())
+  action    String
+  message   String
+  data      Json?
+  createdAt DateTime @default(now())
 }
 
 enum Day {
