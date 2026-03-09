@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db/prisma-client';
 import { withAuth } from '@/app/lib/utils/auth';
 import { SUCCESS_MESSAGES } from '@/app/lib/constants';
+import { getCurrentWeekMonday } from '@/app/lib/utils/dates';
 
 /**
  * Response helper functions
@@ -52,26 +53,37 @@ async function deleteBooking(request, { params }) {
     if (!booking) {
       return createErrorResponse('Booking not found or not authorized', 404);
     }
-    
-    // Store session details for response
-    const sessionDetails = {
-      id: booking.session.id,
-      day: booking.session.day,
-      timeSlot: booking.session.timeSlot
-    };
-    
-    // Delete the booking
-    await prisma.booking.delete({
-      where: { id: bookingId }
-    });
-    
+
+    // Only allow cancelling BOOKED status
+    if (booking.status !== 'BOOKED') {
+      return createErrorResponse('Only booked sessions can be cancelled');
+    }
+
+    // Soft delete — update status to CANCELLED
+    await prisma.$transaction([
+      prisma.booking.update({
+        where: { id: bookingId },
+        data: {
+          status: 'CANCELLED',
+          cancelledAt: new Date()
+        }
+      }),
+      prisma.bookingStatusHistory.create({
+        data: {
+          bookingId,
+          fromStatus: 'BOOKED',
+          toStatus: 'CANCELLED',
+          reason: 'Cancelled by student'
+        }
+      })
+    ]);
+
     return createSuccessResponse({
-      // Include session details to help client-side state management
       deletedBooking: {
         id: bookingId,
         sessionId: booking.sessionId,
-        day: sessionDetails.day,
-        timeSlot: sessionDetails.timeSlot
+        day: booking.session.day,
+        timeSlot: booking.session.timeSlot
       }
     }, SUCCESS_MESSAGES.BOOKING_CANCELLED);
   } catch (error) {

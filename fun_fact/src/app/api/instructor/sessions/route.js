@@ -4,16 +4,27 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db/prisma-client';
 import { DAY_NAMES, TIME_SLOT_NAMES } from '@/app/lib/constants';
+import { withRole } from '@/app/lib/utils/auth';
+import { getCurrentWeekMonday, getWeekMondayFor } from '@/app/lib/utils/dates';
 
 /**
  * GET /api/instructor/sessions - Get all sessions with enrolled students
  */
-export async function GET() {
+export const GET = withRole('INSTRUCTOR', 'ADMIN')(async function GET(request) {
   try {
-    // Get all sessions with their bookings and student information
+    // Support ?weekOf= query param, default to current week
+    const { searchParams } = new URL(request.url);
+    const weekOfParam = searchParams.get('weekOf');
+    const weekOf = weekOfParam ? getWeekMondayFor(new Date(weekOfParam)) : getCurrentWeekMonday();
+
+    // Get all sessions with their bookings for the target week
     const sessions = await prisma.session.findMany({
       include: {
         bookings: {
+          where: {
+            weekOf,
+            status: { not: 'CANCELLED' }
+          },
           include: {
             student: {
               select: {
@@ -22,6 +33,9 @@ export async function GET() {
                 email: true,
                 phoneNumber: true
               }
+            },
+            markedBy: {
+              select: { name: true }
             }
           }
         }
@@ -56,6 +70,11 @@ export async function GET() {
           email: booking.student.email,
           phoneNumber: booking.student.phoneNumber,
           bookingId: booking.id,
+          status: booking.status,
+          attendedAt: booking.attendedAt,
+          completedAt: booking.completedAt,
+          notes: booking.notes,
+          markedBy: booking.markedBy?.name || null,
           bookingDate: booking.createdAt
         }))
       };
@@ -66,7 +85,8 @@ export async function GET() {
     
     return NextResponse.json({
       sessions: formattedSessions,
-      analytics: analytics
+      analytics: analytics,
+      weekOf: weekOf.toISOString()
     });
   } catch (error) {
     console.error('Error fetching instructor sessions:', error);
@@ -75,7 +95,7 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+});
 
 /**
  * Calculate analytics from session data
@@ -121,28 +141,6 @@ function calculateAnalytics(sessions) {
     fillRate: day.capacity > 0 ? Math.round((day.enrolled / day.capacity) * 100) : 0
   })).sort((a, b) => b.fillRate - a.fillRate);
   
-  // Time slot popularity
-  const timeSlotEnrollment = enabledSessions.reduce((acc, session) => {
-    if (!acc[session.timeSlot]) {
-      acc[session.timeSlot] = {
-        timeSlot: session.timeSlot,
-        timeSlotName: session.timeSlotName,
-        enrolled: 0,
-        capacity: 0
-      };
-    }
-    acc[session.timeSlot].enrolled += session.enrolledCount;
-    acc[session.timeSlot].capacity += session.capacity;
-    
-    return acc;
-  }, {});
-  
-  // Calculate fill rate for each time slot
-  const timeSlotPopularity = Object.values(timeSlotEnrollment).map(slot => ({
-    ...slot,
-    fillRate: slot.capacity > 0 ? Math.round((slot.enrolled / slot.capacity) * 100) : 0
-  })).sort((a, b) => b.fillRate - a.fillRate);
-  
   // Count unique students
   const uniqueStudentIds = new Set();
   enabledSessions.forEach(session => {
@@ -159,7 +157,7 @@ function calculateAnalytics(sessions) {
     availableSpots: totalCapacity - totalEnrolled,
     overallFillRate,
     uniqueStudentCount: uniqueStudentIds.size,
-    averageSessionsPerStudent: uniqueStudentIds.size ? (totalEnrolled / uniqueStudentIds.size).toFixed(2) : 0,
+    averageSessionsPerStudent: uniqueStudentIds.size ? (totalEnrolled / uniqueStudentIds.size).toFixed(1) : 0,
     mostPopularSession: mostPopularSession ? {
       day: mostPopularSession.dayName,
       timeSlot: mostPopularSession.timeSlotName,
@@ -170,7 +168,6 @@ function calculateAnalytics(sessions) {
       timeSlot: leastPopularSession.timeSlotName,
       fillRate: leastPopularSession.fillPercentage
     } : null,
-    dayPopularity,
-    timeSlotPopularity
+    dayPopularity
   };
 }

@@ -6,6 +6,7 @@ import prisma from '@/app/lib/db/prisma-client';
 import { withAuth } from '@/app/lib/utils/auth';
 import { validateSessionBooking, sessionBookingSchema } from '@/app/lib/utils/validation';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '@/app/lib/constants';
+import { getCurrentWeekMonday } from '@/app/lib/utils/dates';
 
 /**
  * Response helper functions
@@ -71,7 +72,9 @@ async function createBooking(request) {
       return tx.booking.create({
         data: {
           student: { connect: { id: student.id } },
-          session: { connect: { id: sessionId } }
+          session: { connect: { id: sessionId } },
+          status: 'BOOKED',
+          weekOf: getCurrentWeekMonday()
         }
       });
     });
@@ -114,9 +117,14 @@ async function getBookings(request) {
     // Get student from auth middleware
     const student = request.student;
     
-    // Get all bookings for the student with their sessions
+    // Get current week's active bookings for the student
+    const weekOf = getCurrentWeekMonday();
     const bookings = await prisma.booking.findMany({
-      where: { studentId: student.id },
+      where: {
+        studentId: student.id,
+        weekOf,
+        status: { not: 'CANCELLED' }
+      },
       include: {
         session: true
       },
@@ -124,13 +132,14 @@ async function getBookings(request) {
         createdAt: 'asc'
       }
     });
-    
+
     // Format the bookings
     const formattedBookings = bookings.map(booking => ({
       id: booking.id,
       sessionId: booking.sessionId,
       day: booking.session.day,
       timeSlot: booking.session.timeSlot,
+      status: booking.status,
       createdAt: booking.createdAt
     }));
     

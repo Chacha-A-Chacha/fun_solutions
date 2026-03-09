@@ -4,6 +4,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db/prisma-client';
 import { withAuth } from '@/app/lib/utils/auth';
+import { getCurrentWeekMonday } from '@/app/lib/utils/dates';
 
 /**
  * Response helper functions
@@ -20,10 +21,16 @@ async function getSessions(request) {
     // Get student from auth middleware
     const student = request.student;
     
-    // Get all sessions with their bookings
+    const weekOf = getCurrentWeekMonday();
+
+    // Get all sessions with their bookings for the current week
     const sessions = await prisma.session.findMany({
       include: {
         bookings: {
+          where: {
+            weekOf,
+            status: { not: 'CANCELLED' }
+          },
           select: {
             id: true,
             studentId: true
@@ -35,10 +42,14 @@ async function getSessions(request) {
         { timeSlot: 'asc' }
       ]
     });
-    
-    // Get student's bookings to check which sessions they've booked
+
+    // Get student's current-week bookings to check which sessions they've booked
     const studentBookings = await prisma.booking.findMany({
-      where: { studentId: student.id },
+      where: {
+        studentId: student.id,
+        weekOf,
+        status: { not: 'CANCELLED' }
+      },
       select: { sessionId: true }
     });
     

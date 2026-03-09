@@ -1,45 +1,86 @@
-// file: src/app/api/admin/reset-bookings/route.js
-// description: API endpoint to automatically reset all booking records, designed to be called by Vercel cron every Sunday at 4:59 PM
-
 import { NextResponse } from "next/server";
 import prisma from "@/app/lib/db/prisma-client";
+import { getCurrentWeekMonday } from "@/app/lib/utils/dates";
 
 export async function POST(request) {
-  // Security check
-  // const authHeader = request.headers.get('authorization');
-  // if (authHeader !== `Bearer ${process.env.RESET_API_KEY}`) {
-  //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  // }
+  // Security check — only allow Vercel cron
   const userAgent = request.headers.get("user-agent");
   if (!userAgent?.includes("vercel-cron")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const result = await prisma.booking.deleteMany({});
+    const currentWeekMonday = getCurrentWeekMonday();
+
+    // Find all BOOKED entries from past weeks (not yet attended/completed)
+    const staleBookings = await prisma.booking.findMany({
+      where: {
+        status: 'BOOKED',
+        weekOf: { lt: currentWeekMonday }
+      },
+      select: { id: true }
+    });
+
+    if (staleBookings.length === 0) {
+      await prisma.systemLog.create({
+        data: {
+          action: "BOOKING_ARCHIVE",
+          message: "No stale bookings to archive.",
+          data: { count: 0 },
+        },
+      });
+
+      return NextResponse.json({
+        message: "No stale bookings to archive.",
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    const staleIds = staleBookings.map(b => b.id);
+
+    // Archive: set status to CANCELLED, record history
+    await prisma.$transaction([
+      prisma.booking.updateMany({
+        where: { id: { in: staleIds } },
+        data: {
+          status: 'CANCELLED',
+          cancelledAt: new Date()
+        }
+      }),
+      ...staleIds.map(bookingId =>
+        prisma.bookingStatusHistory.create({
+          data: {
+            bookingId,
+            fromStatus: 'BOOKED',
+            toStatus: 'CANCELLED',
+            reason: 'Weekly archive — booking not attended'
+          }
+        })
+      )
+    ]);
+
     await prisma.systemLog.create({
       data: {
-        action: "BOOKING_RESET",
-        message: `Deleted ${result.count} bookings.`,
-        data: { count: result.count },
+        action: "BOOKING_ARCHIVE",
+        message: `Archived ${staleIds.length} stale bookings.`,
+        data: { count: staleIds.length },
       },
     });
 
     return NextResponse.json({
-      message: `Reset complete. Deleted ${result.count} bookings.`,
+      message: `Archived ${staleIds.length} stale bookings.`,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    // log error
     await prisma.systemLog.create({
       data: {
-        action: "BOOKING_RESET_FAILED",
+        action: "BOOKING_ARCHIVE_FAILED",
         message: error.message,
         data: { error: error.stack },
       },
     });
 
-    console.error("Booking reset failed:", error);
-    return NextResponse.json({ error: "Reset failed" }, { status: 500 });
+    console.error("Booking archive failed:", error);
+    return NextResponse.json({ error: "Archive failed" }, { status: 500 });
   }
 }

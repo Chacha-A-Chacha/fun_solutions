@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db/prisma-client';
 import { z } from 'zod';
+import { withRole } from '@/app/lib/utils/auth';
 
 // Validation schema for student creation
 const createStudentSchema = z.object({
@@ -15,7 +16,7 @@ const createStudentSchema = z.object({
 /**
  * POST /api/instructor/students/create - Create a new student
  */
-export async function POST(request) {
+export const POST = withRole('ADMIN')(async function POST(request) {
   try {
     // Parse request body
     const body = await request.json();
@@ -77,4 +78,4 @@ export async function POST(request) {
       { status: 500 }
     );
   }
-}
+});

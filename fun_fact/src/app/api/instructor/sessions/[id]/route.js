@@ -3,6 +3,7 @@
 
 import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db/prisma-client';
+import { withRole } from '@/app/lib/utils/auth';
 
 /**
  * Response helper functions
@@ -18,7 +19,7 @@ const createSuccessResponse = (data, message, status = 200) => {
 /**
  * PATCH /api/instructor/sessions/:id - Update session status (enabled/disabled)
  */
-export async function PATCH(request, { params }) {
+export const PATCH = withRole('INSTRUCTOR', 'ADMIN')(async function PATCH(request, { params }) {
   try {
     const sessionId = params.id;
     
@@ -92,12 +93,12 @@ export async function PATCH(request, { params }) {
     console.error('Error updating session status:', error);
     return createErrorResponse('Failed to update session status', 500);
   }
-}
+});
 
 /**
  * GET /api/instructor/sessions/:id - Get details of a specific session
  */
-export async function GET(request, { params }) {
+export const GET = withRole('INSTRUCTOR', 'ADMIN')(async function GET(request, { params }) {
   try {
     const sessionId = params.id;
     
@@ -153,4 +154,4 @@ export async function GET(request, { params }) {
     console.error('Error fetching session details:', error);
     return createErrorResponse('Failed to fetch session details', 500);
   }
-}
+});

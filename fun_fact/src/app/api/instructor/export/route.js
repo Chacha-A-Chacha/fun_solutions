@@ -5,11 +5,12 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db/prisma-client';
 import { DAY_NAMES, TIME_SLOT_NAMES } from '@/app/lib/constants';
+import { withRole } from '@/app/lib/utils/auth';
 
 /**
  * GET /api/instructor/export - Export sessions and enrollments as CSV
  */
-export async function GET() {
+export const GET = withRole('INSTRUCTOR', 'ADMIN')(async function GET() {
   try {
     // Get all sessions with their bookings and student information
     const sessions = await prisma.session.findMany({
@@ -79,4 +80,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+});

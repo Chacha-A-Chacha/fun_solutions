@@ -4,11 +4,13 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db/prisma-client';
 import { DAY_NAMES, TIME_SLOT_NAMES } from '@/app/lib/constants';
+import { withRole } from '@/app/lib/utils/auth';
+import { getSetting } from '@/app/lib/utils/settings';
 
 /**
  * GET /api/instructor/students - Get all students with their booking details
  */
-export async function GET(request) {
+export const GET = withRole('INSTRUCTOR', 'ADMIN')(async function GET(request) {
   try {
     // Parse query parameters for filtering/pagination
     const { searchParams } = new URL(request.url);
@@ -57,6 +59,8 @@ export async function GET(request) {
       take: limit
     });
 
+    const totalRequired = await getSetting('total_practicals_required', 15);
+
     // Format student data for the frontend
     const formattedStudents = students.map(student => {
       const bookings = student.bookings.map(booking => ({
@@ -66,8 +70,17 @@ export async function GET(request) {
         dayName: DAY_NAMES[booking.session.day],
         timeSlot: booking.session.timeSlot,
         timeSlotName: TIME_SLOT_NAMES[booking.session.timeSlot],
+        status: booking.status,
+        weekOf: booking.weekOf,
+        attendedAt: booking.attendedAt,
+        completedAt: booking.completedAt,
+        cancelledAt: booking.cancelledAt,
+        notes: booking.notes,
         createdAt: booking.createdAt
       }));
+
+      // Count active (non-cancelled) bookings
+      const activeBookings = bookings.filter(b => b.status !== 'CANCELLED');
 
       return {
         id: student.id,
@@ -77,8 +90,13 @@ export async function GET(request) {
         createdAt: student.createdAt,
         updatedAt: student.updatedAt,
         bookings: bookings,
-        bookingCount: bookings.length,
-        bookedDays: bookings.map(b => b.dayName).join(', ') || 'No bookings'
+        bookingCount: activeBookings.length,
+        totalSessions: bookings.length,
+        completedSessions: bookings.filter(b => b.status === 'COMPLETED').length,
+        attendedSessions: bookings.filter(b => b.status === 'ATTENDED' || b.status === 'COMPLETED').length,
+        totalRequired,
+        isComplete: bookings.filter(b => b.status === 'COMPLETED').length >= totalRequired,
+        bookedDays: [...new Set(activeBookings.map(b => b.dayName))].join(', ') || 'No bookings'
       };
     });
 
@@ -87,16 +105,25 @@ export async function GET(request) {
     const hasNextPage = page < totalPages;
     const hasPreviousPage = page > 1;
 
-    // Calculate analytics
+    // Calculate analytics from full dataset (DB-level, not paginated slice)
+    const studentsWithBookingsCount = await prisma.student.count({
+      where: {
+        ...whereClause,
+        bookings: { some: { status: { not: 'CANCELLED' } } }
+      }
+    });
+
+    const totalActiveBookings = await prisma.booking.count({
+      where: { status: { not: 'CANCELLED' } }
+    });
+
     const analytics = {
       totalStudents: totalCount,
-      studentsWithBookings: formattedStudents.filter(s => s.bookingCount > 0).length,
-      studentsWithoutBookings: formattedStudents.filter(s => s.bookingCount === 0).length,
+      studentsWithBookings: studentsWithBookingsCount,
+      studentsWithoutBookings: totalCount - studentsWithBookingsCount,
       averageBookingsPerStudent: totalCount > 0
-        ? (formattedStudents.reduce((sum, s) => sum + s.bookingCount, 0) / totalCount).toFixed(2)
+        ? (totalActiveBookings / totalCount).toFixed(1)
         : 0,
-      studentsWithMaxBookings: formattedStudents.filter(s => s.bookingCount >= 3).length,
-      totalBookings: formattedStudents.reduce((sum, s) => sum + s.bookingCount, 0)
     };
 
     return NextResponse.json({
@@ -119,4 +146,4 @@ export async function GET(request) {
       { status: 500 }
     );
   }
-}
+});
