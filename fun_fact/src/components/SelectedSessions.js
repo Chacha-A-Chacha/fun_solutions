@@ -7,12 +7,12 @@
 
 import { useState } from 'react';
 import { DAY_NAMES, TIME_SLOT_NAMES } from '@/app/lib/constants';
-import useBookings from '@/app/hooks/useBookings';
+import { useSessionData } from '@/app/hooks/useSessionData';
 import { AlertTriangle, Calendar, Clock, CheckCircle2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function SelectedSessions() {
-  const { bookings, cancelBooking, loading, bookingInProgress } = useBookings();
+  const { bookings, cancelBooking, loading, bookingInProgress, maxDaysPerWeek } = useSessionData();
   const [cancelingId, setCancelingId] = useState(null);
 
   // Handle booking cancellation with optimistic UI update
@@ -44,7 +44,7 @@ export default function SelectedSessions() {
         <AlertTriangle className="w-12 h-12 text-amber-400 mx-auto mb-3" />
         <p className="text-gray-600 font-medium">No sessions selected yet</p>
         <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
-          Please select up to 3 days from the calendar below to book your practical sessions
+          Please select up to {maxDaysPerWeek} days from the calendar below to book your practical sessions
         </p>
       </div>
     );
@@ -104,29 +104,6 @@ export default function SelectedSessions() {
           </div>
         );
       })}
-      
-      <div className="mt-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
-        <div className="flex justify-between items-center">
-          <div className="text-sm text-gray-600">
-            <span className="font-medium">Selected sessions:</span>
-          </div>
-          <div className="flex items-center">
-            <div className="flex space-x-1">
-              {[...Array(3)].map((_, i) => (
-                <div
-                  key={i}
-                  className={`w-3 h-3 rounded-full ${
-                    i < bookings.length ? 'bg-green-500' : 'bg-gray-200'
-                  }`}
-                />
-              ))}
-            </div>
-            <span className="ml-2 text-sm font-medium">
-              {bookings.length}/3
-            </span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

@@ -6,27 +6,23 @@
 
 import { useState, useEffect } from 'react';
 import { DAY_NAMES } from '@/app/lib/constants';
-import useBookings from '@/app/hooks/useBookings';
-import useSessions from '@/app/hooks/useSessions';
+import { useSessionData } from '@/app/hooks/useSessionData';
 import SessionCard from './SessionCard';
 import { RefreshCw, Calendar, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function SessionCalendar() {
-  const { 
-    sessions, 
-    sessionsByDay, 
-    loading: sessionsLoading, 
-    refreshSessions,
-    error
-  } = useSessions();
-  
-  const { 
-    isDayBooked, 
-    getBookedDays, 
-    remainingSlots, 
-    lastAction
-  } = useBookings();
+  const {
+    sessions,
+    sessionsByDay,
+    loading: sessionsLoading,
+    fetchAllData: refreshSessions,
+    error,
+    isDayBooked,
+    remainingSlots,
+    lastAction,
+    maxDaysPerWeek
+  } = useSessionData();
   
   const [selectedDay, setSelectedDay] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -91,7 +87,7 @@ export default function SessionCalendar() {
     return (
       <div className="space-y-6">
         <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-900"></div>
         </div>
         <p className="text-center text-gray-500">Loading available sessions...</p>
       </div>
@@ -129,33 +125,33 @@ export default function SessionCalendar() {
   return (
     <div className="space-y-6">
       {/* Booking Status */}
-      <div className="bg-blue-50 p-4 rounded-lg">
+      <div className="bg-blue-900/5 p-4 rounded-lg border border-blue-900/10">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-medium text-blue-800">
-              Your Session Bookings
+            <h3 className="text-lg font-medium text-blue-900">
+              Your Weekly Bookings
             </h3>
-            <p className="text-sm text-blue-600">
+            <p className="text-sm text-blue-700">
               {remainingSlots > 0
                 ? `You can select ${remainingSlots} more day${
                     remainingSlots !== 1 ? "s" : ""
                   }`
-                : "You have selected all 3 available days"}
+                : `You have selected all ${maxDaysPerWeek} available days`}
             </p>
           </div>
           <div className="flex items-center space-x-1">
             <div className="flex space-x-1">
-              {[...Array(3)].map((_, i) => (
+              {[...Array(maxDaysPerWeek)].map((_, i) => (
                 <div
                   key={i}
                   className={`w-3 h-3 rounded-full ${
-                    i < 3 - remainingSlots ? 'bg-blue-500' : 'bg-gray-200'
+                    i < maxDaysPerWeek - remainingSlots ? 'bg-blue-900' : 'bg-gray-200'
                   }`}
                 />
               ))}
             </div>
-            <div className="ml-2 text-2xl font-bold text-blue-700">
-              {3 - remainingSlots} / 3
+            <div className="ml-2 text-2xl font-bold text-blue-900">
+              {maxDaysPerWeek - remainingSlots} / {maxDaysPerWeek}
             </div>
           </div>
         </div>
@@ -188,50 +184,43 @@ export default function SessionCalendar() {
           {days.map((day) => {
             const isBooked = isDayBooked(day);
             const isSelected = day === selectedDay;
-            
-            // Count available slots for the day
             const availableSlots = sessionsByDay[day].filter(s => s.isAvailable).length;
             const hasAvailableSlots = availableSlots > 0;
 
             return (
-              <button
+              <Button
                 key={day}
+                variant={isSelected ? "default" : "outline"}
                 onClick={() => handleDaySelect(day)}
+                disabled={!hasAvailableSlots && !isBooked}
                 className={`
-                  p-3 rounded-md text-center transition-all duration-150
-                  ${isSelected ? "bg-blue-600 text-white ring-2 ring-blue-300" : ""}
-                  ${
-                    !isSelected && isBooked
-                      ? "bg-green-100 text-green-800 border border-green-300"
-                      : ""
-                  }
-                  ${
-                    !isSelected && !isBooked && hasAvailableSlots
-                      ? "bg-gray-50 text-gray-800 border border-gray-200 hover:bg-gray-100"
-                      : ""
-                  }
-                  ${
-                    !isSelected && !isBooked && !hasAvailableSlots
-                      ? "bg-gray-100 text-gray-500 border border-gray-200 opacity-60"
-                      : ""
+                  h-auto p-3 flex flex-col items-center gap-1
+                  ${isSelected
+                    ? "bg-blue-900 hover:bg-blue-800 text-white"
+                    : isBooked
+                      ? "bg-green-50 text-green-800 border-green-300 hover:bg-green-100 hover:text-green-900"
+                      : hasAvailableSlots
+                        ? "text-slate-700 hover:bg-blue-50 hover:text-blue-900 hover:border-blue-200"
+                        : "text-gray-400 opacity-60"
                   }
                 `}
-                disabled={!hasAvailableSlots && !isBooked}
               >
-                <span className="block text-sm font-medium">
+                <span className="text-sm font-medium">
                   {DAY_NAMES[day]}
                 </span>
                 {isBooked && (
-                  <span className="text-xs mt-1 inline-block bg-green-200 text-green-800 px-1.5 py-0.5 rounded-full">
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                    isSelected ? 'bg-blue-800 text-blue-100' : 'bg-green-200 text-green-800'
+                  }`}>
                     Booked
                   </span>
                 )}
                 {!isBooked && (
-                  <span className={`text-xs mt-1 inline-block ${hasAvailableSlots ? 'text-gray-600' : 'text-gray-400'}`}>
+                  <span className={`text-xs ${isSelected ? 'text-blue-200' : hasAvailableSlots ? 'text-slate-500' : 'text-gray-400'}`}>
                     {availableSlots} slot{availableSlots !== 1 ? 's' : ''}
                   </span>
                 )}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -242,7 +231,7 @@ export default function SessionCalendar() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-medium">
-              <Calendar className="w-5 h-5 inline mr-2 text-blue-600" />
+              <Calendar className="w-5 h-5 inline mr-2 text-blue-900" />
               {DAY_NAMES[selectedDay]} Sessions
             </h3>
             <span className="text-sm text-gray-500">
@@ -262,7 +251,7 @@ export default function SessionCalendar() {
           {hasReachedBookingLimit && !isDayBooked(selectedDay) && (
             <div className="mt-4 bg-amber-50 p-3 rounded-md text-amber-700 text-sm border border-amber-200">
               <AlertTriangle className="w-4 h-4 inline mr-1" />
-              You have already selected 3 days. To select this day, you need to
+              You have already selected {maxDaysPerWeek} days. To select this day, you need to
               cancel one of your existing bookings.
             </div>
           )}

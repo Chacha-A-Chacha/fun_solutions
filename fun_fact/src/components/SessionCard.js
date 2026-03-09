@@ -9,10 +9,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, Clock, CheckCircle } from 'lucide-react';
 import { TIME_SLOT_NAMES } from '@/app/lib/constants';
-import useBookings from '@/app/hooks/useBookings';
+import { useSessionData } from '@/app/hooks/useSessionData';
 
 export default function SessionCard({ session }) {
-  const { bookSession, isSessionBooked, isDayBooked, remainingSlots, bookingInProgress } = useBookings();
+  const { bookSession, isSessionBooked, isDayBooked, remainingSlots, bookingInProgress } = useSessionData();
   const [isBooking, setIsBooking] = useState(false);
   
   // Check if this specific session is booked
@@ -92,7 +92,7 @@ export default function SessionCard({ session }) {
           ) : (
             <Button
               variant={dayAlreadyBooked ? "outline" : "default"}
-              className="w-full"
+              className={`w-full ${!dayAlreadyBooked ? 'bg-blue-900 hover:bg-blue-800' : ''}`}
               disabled={disabled}
               onClick={handleBook}
             >
@@ -111,7 +111,7 @@ export default function SessionCard({ session }) {
         {/* Show explanation if max bookings reached */}
         {!dayAlreadyBooked && hasReachedBookingLimit && !booked && (
           <p className="text-xs text-amber-600 mt-2">
-            You've reached your session limit
+            You've reached your weekly booking limit
           </p>
         )}
       </CardContent>

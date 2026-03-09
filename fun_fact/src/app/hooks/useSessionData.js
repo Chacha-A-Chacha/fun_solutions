@@ -5,6 +5,7 @@ import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { useAuth } from './useAuth';
 import { DAY_NAMES, TIME_SLOT_NAMES, SESSION_CONSTRAINTS } from '@/app/lib/constants';
+import { useSettings } from './useSettings';
 
 // Create context
 const SessionDataContext = createContext(null);
@@ -12,12 +13,15 @@ const SessionDataContext = createContext(null);
 // Provider component
 export function SessionDataProvider({ children }) {
   const { isAuthenticated } = useAuth();
+  const { settings } = useSettings();
+  const maxDaysPerWeek = settings.max_days_per_week ?? SESSION_CONSTRAINTS.MAX_DAYS_PER_STUDENT;
   const [bookings, setBookings] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [bookingInProgress, setBookingInProgress] = useState(false);
   const [error, setError] = useState(null);
   const [lastRefresh, setLastRefresh] = useState(null);
+  const [lastAction, setLastAction] = useState(null);
 
   // Group sessions by day - derived state
   const sessionsByDay = sessions.reduce((acc, session) => {
@@ -65,8 +69,8 @@ export function SessionDataProvider({ children }) {
       setBookingInProgress(true);
       
       // Validate constraints client-side
-      if (bookings.length >= SESSION_CONSTRAINTS.MAX_DAYS_PER_STUDENT) {
-        toast.error(`You can only book up to ${SESSION_CONSTRAINTS.MAX_DAYS_PER_STUDENT} sessions`);
+      if (bookings.length >= maxDaysPerWeek) {
+        toast.error(`You can only book up to ${maxDaysPerWeek} days per week`);
         return false;
       }
       
@@ -110,12 +114,13 @@ export function SessionDataProvider({ children }) {
       const { data } = await axios.post('/api/bookings', { sessionId: session.id });
       
       // Update with real data
-      setBookings(prevBookings => 
+      setBookings(prevBookings =>
         prevBookings
           .filter(b => b.id !== optimisticBooking.id)
           .concat(data.booking)
       );
-      
+
+      setLastAction({ type: 'BOOK', sessionId: session.id, timestamp: Date.now() });
       toast.success(data.message);
       return true;
     } catch (error) {
@@ -246,7 +251,8 @@ export function SessionDataProvider({ children }) {
     error,
     bookingInProgress,
     lastRefresh,
-    
+    lastAction,
+
     // Actions
     fetchAllData,
     bookSession,
@@ -260,8 +266,11 @@ export function SessionDataProvider({ children }) {
     formatBooking,
     formatSession,
     
+    // Settings
+    maxDaysPerWeek,
+
     // Derived data
-    remainingSlots: SESSION_CONSTRAINTS.MAX_DAYS_PER_STUDENT - bookings.length
+    remainingSlots: maxDaysPerWeek - bookings.length
   };
 
   return (

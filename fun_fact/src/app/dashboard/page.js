@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/hooks/useAuth';
 import { useSessionData } from '@/app/hooks/useSessionData';
+import { useSettings } from '@/app/hooks/useSettings';
 import { 
   Card, 
   CardContent, 
@@ -24,17 +25,20 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { 
-  LogOut, 
-  CalendarCheck, 
-  Info, 
-  Phone, 
+import {
+  LogOut,
+  CalendarCheck,
+  Info,
+  Phone,
   RefreshCw,
-  Clock
+  Clock,
+  History
 } from 'lucide-react';
 import SessionCalendar from '@/components/SessionCalendar';
 import SelectedSessions from '@/components/SelectedSessions';
+import StudentHistorySheet from '@/components/StudentHistorySheet';
 import Image from 'next/image';
+import PoweredByFooter from '@/components/PoweredByFooter';
 
 // Function to generate avatar abbreviation
 const getNameAbbreviation = (name = '') => {
@@ -62,13 +66,16 @@ const getAvatarUrl = (student) => {
 
 export default function Dashboard() {
   const { isAuthenticated, student, loading: authLoading, logout } = useAuth();
-  const { 
-    loading: dataLoading, 
-    lastRefresh, 
-    fetchAllData, 
+  const {
+    loading: dataLoading,
+    lastRefresh,
+    fetchAllData,
     remainingSlots
   } = useSessionData();
+  const { settings } = useSettings();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const router = useRouter();
 
   // Generate name abbreviation
@@ -83,25 +90,22 @@ export default function Dashboard() {
     [student]
   );
 
-  // Format the last refresh time
-  const formattedLastRefresh = useMemo(() => {
-    if (!lastRefresh) return 'Never';
-    
-    // If within the last minute, show "Just now"
-    const diffMs = Date.now() - new Date(lastRefresh).getTime();
-    if (diffMs < 60000) return 'Just now';
-    
-    // If within the last hour, show minutes
-    if (diffMs < 3600000) {
-      const minutes = Math.floor(diffMs / 60000);
-      return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
-    }
-    
-    // Otherwise show time
-    return new Date(lastRefresh).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+  // Format the last refresh time (auto-updates every 30s)
+  const [formattedLastRefresh, setFormattedLastRefresh] = useState('Never');
+  useEffect(() => {
+    const formatRefresh = () => {
+      if (!lastRefresh) return 'Never';
+      const diffMs = Date.now() - new Date(lastRefresh).getTime();
+      if (diffMs < 60000) return 'Just now';
+      if (diffMs < 3600000) {
+        const minutes = Math.floor(diffMs / 60000);
+        return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+      }
+      return new Date(lastRefresh).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+    setFormattedLastRefresh(formatRefresh());
+    const interval = setInterval(() => setFormattedLastRefresh(formatRefresh()), 30000);
+    return () => clearInterval(interval);
   }, [lastRefresh]);
 
   // Handle manual refresh
@@ -121,9 +125,9 @@ export default function Dashboard() {
   // Show loading state
   if (authLoading || !isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-white">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mx-auto"></div>
           <p className="text-gray-500 mt-4">Loading your dashboard...</p>
         </div>
       </div>
@@ -131,53 +135,55 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+    <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-10">
+      <header className="bg-blue-900 shadow-lg sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <CalendarCheck className="w-6 h-6 text-blue-600" />
-            <h1 className="text-lg font-bold text-gray-900">Session Scheduler</h1>
+            <CalendarCheck className="w-6 h-6 text-blue-200" />
+            <h1 className="text-lg font-bold text-white">Session Scheduler</h1>
           </div>
-          
+
           {/* Last refresh indicator */}
-          <div className="hidden md:flex items-center text-sm text-gray-500">
+          <div className="hidden md:flex items-center text-sm text-blue-200">
             <Clock className="w-4 h-4 mr-1" />
             <span>Last updated: {formattedLastRefresh}</span>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              size="icon"
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="ml-1 h-6 w-6 text-gray-400 hover:text-gray-600"
+              className="ml-1 h-6 w-6 bg-transparent text-blue-200 hover:text-white hover:bg-blue-800 shadow-none"
             >
               <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
             </Button>
           </div>
-          
-          {/* Student Profile Dropdown */}
+
+          {/* History & Profile */}
+          <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setHistoryOpen(true)}
+            className="border-blue-300 bg-transparent text-blue-100 hover:text-white hover:bg-blue-800 hover:border-white shadow-none"
+          >
+            <History className="w-4 h-4" />
+            <span className="hidden sm:inline">My Progress</span>
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              {avatarUrl ? (
-                <div className="w-10 h-10 rounded-full overflow-hidden cursor-pointer">
-                  <Image 
-                    src={avatarUrl} 
-                    alt={`${student.name}'s avatar`} 
-                    width={40} 
-                    height={40} 
+              {avatarUrl && !avatarError ? (
+                <div className="w-10 h-10 rounded-full overflow-hidden cursor-pointer ring-2 ring-blue-300">
+                  <Image
+                    src={avatarUrl}
+                    alt={`${student.name}'s avatar`}
+                    width={40}
+                    height={40}
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.parentNode.innerHTML = `
-                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center">
-                          ${nameAbbreviation}
-                        </div>
-                      `;
-                    }}
+                    onError={() => setAvatarError(true)}
                   />
                 </div>
               ) : (
-                <Button variant="outline" size="icon" className="rounded-full w-10 h-10 bg-blue-100 text-blue-800 hover:bg-blue-200">
+                <Button size="icon" className="rounded-full w-10 h-10 bg-blue-800 text-white hover:bg-blue-700 border border-blue-300">
                   {nameAbbreviation}
                 </Button>
               )}
@@ -185,22 +191,15 @@ export default function Dashboard() {
             <DropdownMenuContent align="end" className="w-64">
               <DropdownMenuLabel>
                 <div className="flex items-center space-x-3">
-                  {avatarUrl ? (
+                  {avatarUrl && !avatarError ? (
                     <div className="w-12 h-12 rounded-full overflow-hidden">
-                      <Image 
-                        src={avatarUrl} 
-                        alt={`${student.name}'s avatar`} 
-                        width={48} 
-                        height={48} 
+                      <Image
+                        src={avatarUrl}
+                        alt={`${student.name}'s avatar`}
+                        width={48}
+                        height={48}
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.parentNode.innerHTML = `
-                            <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center text-xl font-bold">
-                              ${nameAbbreviation}
-                            </div>
-                          `;
-                        }}
+                        onError={() => setAvatarError(true)}
                       />
                     </div>
                   ) : (
@@ -229,15 +228,19 @@ export default function Dashboard() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
         </div>
       </header>
+
+      {/* Booking History Sheet */}
+      <StudentHistorySheet selfMode open={historyOpen} onOpenChange={setHistoryOpen} />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
         {/* Instructions Card */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Info className="w-5 h-5 text-blue-600" />
+              <Info className="w-5 h-5 text-blue-900" />
               Booking Guidelines
             </CardTitle>
             <CardDescription>
@@ -251,15 +254,15 @@ export default function Dashboard() {
                 <ul className="space-y-2 text-sm text-gray-700">
                   <li className="flex items-center">
                     <span className="mr-2">•</span>
-                    Select sessions on 1 available day
+                    Select up to {settings.max_days_per_week} days per week
                   </li>
                   <li className="flex items-center">
                     <span className="mr-2">•</span>
-                    One session per day allowed
+                    {settings.max_sessions_per_day === 1 ? 'One session per day allowed' : `Up to ${settings.max_sessions_per_day} sessions per day`}
                   </li>
                   <li className="flex items-center">
                     <span className="mr-2">•</span>
-                    Maximum 4 students per session
+                    Maximum {settings.max_capacity_per_session} students per session
                   </li>
                   <li className="flex items-center">
                     <span className="mr-2">•</span>
@@ -268,23 +271,23 @@ export default function Dashboard() {
                 </ul>
               </div>
               <div className="bg-green-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-green-800 mb-2">Session Times</h3>
+                <h3 className="font-semibold text-green-800 mb-2">How It Works</h3>
                 <ul className="space-y-2 text-sm text-gray-700">
                   <li className="flex items-center">
                     <span className="mr-2">•</span>
-                    Weekdays: 8-10am, 10am-12pm
+                    Pick a day from the calendar below
                   </li>
                   <li className="flex items-center">
                     <span className="mr-2">•</span>
-                    Weekdays: 1-3pm, 3-5pm
+                    Choose an available time slot
                   </li>
                   <li className="flex items-center">
                     <span className="mr-2">•</span>
-                    Weekends: 9-11am, 11am-1pm
+                    Cancel bookings anytime before the session
                   </li>
                   <li className="flex items-center">
                     <span className="mr-2">•</span>
-                    Weekends: 2-4pm, 4-6pm
+                    Each session is 2 hours long
                   </li>
                 </ul>
               </div>
@@ -319,29 +322,7 @@ export default function Dashboard() {
         </Card>
       </main>
 
-      {/* Footer */}
-      <footer className="mt-8 mb-4 text-center">
-        <div className="flex justify-center items-center space-x-4">
-          <a 
-            href="https://www.chach-a.com" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="group flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg"
-          >
-            <span className="text-xs text-gray-600 group-hover:text-gray-800 transition-colors">
-              Powered by
-            </span>
-            <img 
-              src="https://www.chach-a.com/logoMark.svg" 
-              alt="Chacha Technologies Logo" 
-              className="transform h-7 w-auto group-hover:scale-110 transition-transform duration-300" 
-            />
-            <span className="text-sm font-medium text-gray-800 group-hover:text-black">
-              Chacha Technologies
-            </span>
-          </a>
-        </div>
-      </footer>
+      <PoweredByFooter variant="light" />
     </div>
   );
 }
