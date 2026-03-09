@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import prisma from "@/app/lib/db/prisma-client";
 import { getCurrentWeekMonday } from "@/app/lib/utils/dates";
 
-export async function POST(request) {
+export async function GET(request) {
   // Security check — only allow Vercel cron
-  const userAgent = request.headers.get("user-agent");
-  if (!userAgent?.includes("vercel-cron")) {
+  const authHeader = request.headers.get("authorization");
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

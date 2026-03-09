@@ -7,6 +7,8 @@ const adapter = new PrismaMariaDb({
   password: process.env.DATABASE_PASSWORD,
   database: process.env.DATABASE_NAME,
   port: parseInt(process.env.DATABASE_PORT || '3306'),
+  connectTimeout: 5000,
+  acquireTimeout: 5000,
 });
 
 // Add prisma to the global type
