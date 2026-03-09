@@ -12,20 +12,25 @@ const DEFAULTS = {
  * Get all system settings as a { key: parsedValue } map
  */
 export async function getSettings() {
-  const rows = await prisma.systemSetting.findMany();
-  const settings = { ...DEFAULTS };
+  try {
+    const rows = await prisma.systemSetting.findMany();
+    const settings = { ...DEFAULTS };
 
-  for (const row of rows) {
-    if (row.type === 'number') {
-      settings[row.key] = parseInt(row.value, 10);
-    } else if (row.type === 'boolean') {
-      settings[row.key] = row.value === 'true';
-    } else {
-      settings[row.key] = row.value;
+    for (const row of rows) {
+      if (row.type === 'number') {
+        settings[row.key] = parseInt(row.value, 10);
+      } else if (row.type === 'boolean') {
+        settings[row.key] = row.value === 'true';
+      } else {
+        settings[row.key] = row.value;
+      }
     }
-  }
 
-  return settings;
+    return settings;
+  } catch {
+    // Fallback to defaults when DB is unavailable (e.g. during build)
+    return { ...DEFAULTS };
+  }
 }
 
 /**
