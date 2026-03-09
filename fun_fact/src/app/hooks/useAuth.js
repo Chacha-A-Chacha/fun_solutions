@@ -81,24 +81,22 @@ export function AuthProvider({ children }) {
     checkAuth();
   }, []);
 
-  // Login function - immediately navigate and show loader in dashboard
+  // Login function - authenticate first, then navigate
   const login = async (credentials) => {
     try {
       setLoginInProgress(true);
 
-      // First navigate to dashboard with loading state
-      router.push('/dashboard');
-
-      // Then perform the login request
+      // Authenticate first
       const { data } = await axios.post('/api/auth', credentials);
       setStudent(data.student);
       toast.success(data.message);
+
+      // Navigate only after successful auth
+      router.push('/dashboard');
       return true;
     } catch (error) {
       const message = error.response?.data?.error || 'Login failed';
       toast.error(message);
-      // Navigate back to login page on failure
-      router.push('/');
       return false;
     } finally {
       setLoginInProgress(false);

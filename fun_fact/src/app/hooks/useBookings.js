@@ -9,9 +9,12 @@ import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { useAuth } from './useAuth';
 import { DAY_NAMES, TIME_SLOT_NAMES, SESSION_CONSTRAINTS } from '@/app/lib/constants';
+import { useSettings } from './useSettings';
 
 export default function useBookings() {
   const { isAuthenticated } = useAuth();
+  const { settings } = useSettings();
+  const maxDaysPerWeek = settings.max_days_per_week ?? SESSION_CONSTRAINTS.MAX_DAYS_PER_STUDENT;
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [bookingInProgress, setBookingInProgress] = useState(false);
@@ -44,8 +47,8 @@ export default function useBookings() {
       setBookingInProgress(true);
       
       // Validate constraints client-side before submitting
-      if (bookings.length >= SESSION_CONSTRAINTS.MAX_DAYS_PER_STUDENT) {
-        toast.error(`You can only book up to ${SESSION_CONSTRAINTS.MAX_DAYS_PER_STUDENT} sessions`);
+      if (bookings.length >= maxDaysPerWeek) {
+        toast.error(`You can only book up to ${maxDaysPerWeek} sessions per week`);
         return false;
       }
       
@@ -190,6 +193,7 @@ export default function useBookings() {
     getBookingForDay,
     getBookedDays,
     lastAction,
-    remainingSlots: SESSION_CONSTRAINTS.MAX_DAYS_PER_STUDENT - bookings.length
+    maxDaysPerWeek,
+    remainingSlots: maxDaysPerWeek - bookings.length
   };
 }

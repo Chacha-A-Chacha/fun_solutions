@@ -1,120 +1,70 @@
-// file: src/app/page.js
-// description: This is the main login page for the Student Session Scheduler application. It includes a login form and session guidelines.
-
-
-import AuthForm from '@/components/AuthForm';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { 
-  Accordion, 
-  AccordionContent, 
-  AccordionItem, 
-  AccordionTrigger 
-} from '@/components/ui/accordion';
-import { Button } from '@/components/ui/button';
-import { Info, ExternalLink } from 'lucide-react';
+import { Suspense } from "react";
+import { getSettings } from "@/app/lib/utils/settings";
+import LoginTabs from "@/components/LoginTabs";
+import PoweredByFooter from "@/components/PoweredByFooter";
+import { Card, CardContent } from "@/components/ui/card";
+import { Info } from "lucide-react";
 
 export const metadata = {
-  title: 'Student Session Scheduler - Login',
-  description: 'Log in to book your practical sessions',
+  title: "IYF We Can Academy - Session Scheduler",
+  description: "Log in to book your practical sessions",
 };
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const settings = await getSettings();
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto w-full grid md:grid-cols-2 gap-8">
-        {/* Login Card */}
-        <Card className="w-full shadow-2xl">
-          <CardHeader>
-            <CardTitle className="text-3xl font-bold text-center text-gray-900">
-              Student Session Scheduler
-            </CardTitle>
-            <CardDescription className="text-center text-gray-600">
-              Book your practical sessions with ease
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AuthForm />
-          </CardContent>
-        </Card>
+    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-blue-900 to-slate-900 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+      {/* Decorative background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl" />
+      </div>
 
-        {/* Information Section */}
-        <Card className="w-full shadow-2xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Info className="w-6 h-6 text-blue-600" />
-              Session Guidelines
-            </CardTitle>
-            <CardDescription>
-              Key details about booking your practical sessions
-            </CardDescription>
-          </CardHeader>
-          <CardContent className=" flex-col space-y-4">
-            <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="item-1">
-                <AccordionTrigger>Session Availability</AccordionTrigger>
-                <AccordionContent>
-                  <ul className="list-disc pl-4 space-y-2 text-sm text-gray-600">
-                    <li>
-                      Available Monday-Thursday: 8-10am, 10am-12pm, 1-3pm, 3-5pm
-                    </li>
-                    <li>Weekend slots: 9-11am, 11am-1pm, 2-4pm, 4-6pm</li>
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="item-2">
-                <AccordionTrigger>Booking Limits</AccordionTrigger>
-                <AccordionContent>
-                  <ul className="list-disc pl-4 space-y-2 text-sm text-gray-600">
-                    <li>Select sessions on 1 available day</li>
-                    <li>One session per day</li>
-                    <li>Maximum 4 students per session</li>
-                    <li>Modify selections until all spots are filled</li>
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+      <div className="relative max-w-md mx-auto w-full">
+        {/* Logo */}
+        <div className="text-center mb-6">
+          <div className="inline-block bg-blue-950 rounded-2xl px-6 py-3 shadow-lg mb-3">
+            <img
+              src="/App-Logo.png"
+              alt="IYF We Can Academy"
+              className="h-20 w-auto"
+            />
+          </div>
+          <p className="text-blue-200 text-sm">
+            Book your practical driving sessions
+          </p>
+        </div>
 
-            <div className="text-sm items-end text-gray-500">
-              <a
-                href="/instructor?instructor_key=demo_instructor_access"
-                className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-              >
-                Instructor Dashboard <ExternalLink className="w-4 h-4" />
-              </a>
+        <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
+          <CardContent className="pt-6 space-y-6">
+            <Suspense fallback={null}>
+              <LoginTabs />
+            </Suspense>
+
+            {/* Inline guidelines */}
+            <div className="bg-blue-950/5 rounded-lg p-3 border border-blue-900/10">
+              <div className="flex items-center gap-1.5 text-sm font-medium text-blue-900 mb-1.5">
+                <Info className="w-4 h-4 text-blue-700" />
+                Session Guidelines
+              </div>
+              <ul className="text-xs text-slate-600 space-y-0.5 ml-5.5 list-disc">
+                <li>Available Monday–Thursday &amp; weekends</li>
+                <li>Select up to {settings.max_days_per_week} days per week</li>
+                <li>
+                  Maximum {settings.max_capacity_per_session} students per
+                  session
+                </li>
+                <li>One session per day</li>
+              </ul>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Footer */}
-      <footer className="mt-12 text-center">
-        <div className="flex justify-center items-center space-x-4 mt-4">
-          <a
-            href="https://www.chach-a.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg"
-          >
-            <span className="text-xs text-gray-600 group-hover:text-gray-800 transition-colors">
-              Powered by
-            </span>
-            <img
-              src="https://www.chach-a.com/logoMark.svg"
-              alt="Chacha Technologies Logo"
-              className="transform h-7 w-auto group-hover:scale-110 transition-transform duration-300"
-            />
-            {/* <span className="text-sm font-medium text-gray-800 group-hover:text-black">
-              Chacha Technologies
-            </span> */}
-          </a>
-        </div>
-      </footer>
+      <div className="relative mt-10">
+        <PoweredByFooter variant="light" />
+      </div>
     </div>
   );
 }
