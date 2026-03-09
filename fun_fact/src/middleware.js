@@ -1,39 +1,69 @@
-// File: src/middleware.js
-// Description: Middleware to protect instructor routes and handle authentication
-
 import { NextResponse } from 'next/server';
+import { jwtVerify } from 'jose';
 
-export function middleware(request) {
-  // This is a simple middleware to protect instructor routes
-  // In a production app, you would implement proper instructor authentication
-  
-  const instructorPath = '/instructor';
-  const instructorApiPath = '/api/instructor';
-  
-  // Check if the request is for an instructor route
-  if (
-    request.nextUrl.pathname.startsWith(instructorPath) ||
-    request.nextUrl.pathname.startsWith(instructorApiPath)
-  ) {
-    // Check for the presence of an instructor cookie or query parameter
-    // For demo purposes, we're using a simple query parameter
-    // In production, use proper authentication
-    const isInstructorMode = request.nextUrl.searchParams.get('instructor_key') === 'demo_instructor_access';
-    
-    if (!isInstructorMode) {
-      // Redirect to the login page if not authenticated
-      // For this demo, we're appending the query parameter to the current URL
-      const url = new URL(request.url);
-      url.searchParams.set('instructor_key', 'demo_instructor_access');
-      
-      return NextResponse.redirect(url);
+const secretKey = new TextEncoder().encode(
+  process.env.NEXTAUTH_SECRET || 'fallback-secret-key-change-in-production'
+);
+
+const STAFF_AUTH_COOKIE = 'staff-token';
+
+export async function middleware(request) {
+  const token = request.cookies.get(STAFF_AUTH_COOKIE)?.value;
+
+  // No token → redirect to staff login
+  if (!token) {
+    // For API routes, return 401 JSON instead of redirect
+    if (request.nextUrl.pathname.startsWith('/api/')) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
     }
+    return NextResponse.redirect(new URL('/?tab=staff', request.url));
   }
-  
-  return NextResponse.next();
+
+  try {
+    const { payload } = await jwtVerify(token, secretKey);
+
+    // Admin-only routes require ADMIN role
+    if (
+      request.nextUrl.pathname.startsWith('/admin') ||
+      request.nextUrl.pathname.startsWith('/api/admin')
+    ) {
+      if (payload.role !== 'ADMIN') {
+        if (request.nextUrl.pathname.startsWith('/api/')) {
+          return NextResponse.json(
+            { error: 'Admin access required' },
+            { status: 403 }
+          );
+        }
+        return NextResponse.redirect(new URL('/instructor', request.url));
+      }
+    }
+
+    const response = NextResponse.next();
+    response.headers.set('x-user-id', payload.id);
+    response.headers.set('x-user-role', payload.role);
+    return response;
+  } catch (error) {
+    // Invalid/expired token → clear cookie and redirect
+    if (request.nextUrl.pathname.startsWith('/api/')) {
+      return NextResponse.json(
+        { error: 'Invalid or expired token' },
+        { status: 401 }
+      );
+    }
+    const response = NextResponse.redirect(new URL('/?tab=staff', request.url));
+    response.cookies.delete(STAFF_AUTH_COOKIE);
+    return response;
+  }
 }
 
-// Configure the middleware to run only on specific paths
 export const config = {
-  matcher: ['/instructor/:path*', '/api/instructor/:path*'],
+  matcher: [
+    '/instructor/:path*',
+    '/api/instructor/:path*',
+    '/admin/:path*',
+    '/api/admin/:path*'
+  ],
 };

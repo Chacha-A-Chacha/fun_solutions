@@ -61,17 +61,17 @@ export const DAYS = {
     [DAYS.SUNDAY]: [TIME_SLOTS.SLOT_9_11, TIME_SLOTS.SLOT_11_13, TIME_SLOTS.SLOT_14_16, TIME_SLOTS.SLOT_16_18]
   };
   
-  // Session constraints
+  // Session constraints (fallback defaults — DB SystemSetting takes precedence)
   export const SESSION_CONSTRAINTS = {
-    MAX_CAPACITY: 6,
-    MAX_DAYS_PER_STUDENT: 2,
+    MAX_CAPACITY: 4,
+    MAX_DAYS_PER_STUDENT: 3,
     MAX_SESSIONS_PER_DAY: 1
   };
-  
+
   // Error messages
   export const ERROR_MESSAGES = {
     SESSION_FULL: 'This session is already at full capacity.',
-    MAX_DAYS_REACHED: 'You can only select up to 2 days.',
+    MAX_DAYS_REACHED: 'You have reached the maximum days per week.',
     DAY_ALREADY_BOOKED: 'You already have a session booked for this day.',
     INVALID_CREDENTIALS: 'Invalid student ID or email.',
     SYSTEM_ERROR: 'Something went wrong. Please try again later.',

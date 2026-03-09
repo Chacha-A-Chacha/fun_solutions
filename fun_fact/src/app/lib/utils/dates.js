@@ -75,3 +75,26 @@ export function getNextDateForDay(day) {
 export function formatDate(date) {
   return format(date, 'MMMM d, yyyy');
 }
+
+/**
+ * Get Monday 00:00:00 UTC of the current week
+ * @returns {Date}
+ */
+export function getCurrentWeekMonday() {
+  const now = new Date();
+  return getWeekMondayFor(now);
+}
+
+/**
+ * Get Monday 00:00:00 UTC of the week containing the given date
+ * @param {Date} date
+ * @returns {Date}
+ */
+export function getWeekMondayFor(date) {
+  const d = new Date(date);
+  const day = d.getUTCDay(); // 0=Sun, 1=Mon, ...
+  const diff = day === 0 ? -6 : 1 - day; // if Sunday, go back 6 days
+  d.setUTCDate(d.getUTCDate() + diff);
+  d.setUTCHours(0, 0, 0, 0);
+  return d;
+}

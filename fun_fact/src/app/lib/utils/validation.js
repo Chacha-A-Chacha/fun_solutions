@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import prisma from '../db/prisma-client';
-import { SESSION_CONSTRAINTS, ERROR_MESSAGES } from '../constants';
+import { ERROR_MESSAGES } from '../constants';
+import { getCurrentWeekMonday } from './dates';
+import { getSetting } from './settings';
 
 // Student login validation schema
 export const studentLoginSchema = z.object({
@@ -8,6 +10,12 @@ export const studentLoginSchema = z.object({
     .min(1, 'Student ID is required')
     .regex(/^DR-\d{4,5}-\d{2}$/, 'Invalid ID format. Should match pattern: DR-XXXX-XX'),
   email: z.string().email('Invalid email format')
+});
+
+// Staff login validation schema
+export const staffLoginSchema = z.object({
+  email: z.string().email('Invalid email format'),
+  password: z.string().min(8, 'Password must be at least 8 characters')
 });
 
 // Session booking validation schema
@@ -74,17 +82,31 @@ export async function validateSessionBooking(studentId, sessionId) {
       };
     }
 
+    // Fetch dynamic settings
+    const maxCapacity = await getSetting('max_capacity_per_session', 4);
+    const maxDaysPerWeek = await getSetting('max_days_per_week', 3);
+
+    // Only count active bookings for current week toward capacity
+    const weekOf = getCurrentWeekMonday();
+    const activeBookings = session.bookings.filter(
+      b => b.status !== 'CANCELLED' && b.weekOf.getTime() === weekOf.getTime()
+    );
+
     // Check if session is full
-    if (session.bookings.length >= SESSION_CONSTRAINTS.MAX_CAPACITY) {
+    if (activeBookings.length >= maxCapacity) {
       return {
         valid: false,
-        error: ERROR_MESSAGES.SESSION_FULL
+        error: `This session is already at full capacity (${maxCapacity} students).`
       };
     }
 
-    // Get student's existing bookings
+    // Get student's existing active bookings for current week
     const studentBookings = await prisma.booking.findMany({
-      where: { studentId },
+      where: {
+        studentId,
+        weekOf,
+        status: { not: 'CANCELLED' }
+      },
       include: {
         session: true
       }
@@ -103,10 +125,10 @@ export async function validateSessionBooking(studentId, sessionId) {
     }
 
     // Check if student reached max days
-    if (studentBookings.length >= SESSION_CONSTRAINTS.MAX_DAYS_PER_STUDENT) {
+    if (studentBookings.length >= maxDaysPerWeek) {
       return {
         valid: false,
-        error: ERROR_MESSAGES.MAX_DAYS_REACHED
+        error: `You can only select up to ${maxDaysPerWeek} days per week.`
       };
     }
 

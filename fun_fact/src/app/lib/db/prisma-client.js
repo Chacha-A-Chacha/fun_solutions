@@ -1,20 +1,20 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../../../../generated/prisma/client';
+import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 
-// Explicitly set the database URL
-const databaseUrl = process.env.DATABASE_URL || 'file:./dev.db';
+const adapter = new PrismaMariaDb({
+  host: process.env.DATABASE_HOST,
+  user: process.env.DATABASE_USER,
+  password: process.env.DATABASE_PASSWORD,
+  database: process.env.DATABASE_NAME,
+  port: parseInt(process.env.DATABASE_PORT || '3306'),
+});
 
 // Add prisma to the global type
 const globalForPrisma = global;
 
 // Prevent multiple instances of Prisma Client in development
 const prismaClientSingleton = () => {
-  return new PrismaClient({
-    datasources: {
-      db: {
-        url: databaseUrl,
-      },
-    },
-  });
+  return new PrismaClient({ adapter });
 };
 
 export const prisma = globalForPrisma.prisma || prismaClientSingleton();
