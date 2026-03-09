@@ -2,12 +2,12 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 
 datasource db {
-  provider     = "mysql"
-  url          = env("DATABASE_URL")
+  provider = "mysql"
 }
 
 model Student {
@@ -33,17 +33,77 @@ model Session {
   @@unique([day, timeSlot])
 }
 
-model Booking {
-  id        String   @id @default(uuid())
-  student   Student  @relation(fields: [studentId], references: [id])
-  studentId String
-  session   Session  @relation(fields: [sessionId], references: [id])
-  sessionId String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum BookingStatus {
+  BOOKED
+  ATTENDED
+  NO_SHOW
+  COMPLETED
+  INCOMPLETE
+  CANCELLED
+}
 
-  @@unique([studentId, sessionId])
+model Booking {
+  id            String        @id @default(uuid())
+  student       Student       @relation(fields: [studentId], references: [id])
+  studentId     String
+  session       Session       @relation(fields: [sessionId], references: [id])
+  sessionId     String
+  status        BookingStatus @default(BOOKED)
+  weekOf        DateTime      @default(now()) // Monday of the booking week
+  markedBy      User?         @relation("BookingsMarked", fields: [markedById], references: [id])
+  markedById    String?
+  attendedAt    DateTime?
+  completedAt   DateTime?
+  cancelledAt   DateTime?
+  notes         String?       @db.Text
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  statusHistory BookingStatusHistory[]
+
+  @@unique([studentId, sessionId, weekOf])
   @@index([studentId])
+  @@index([weekOf])
+  @@index([status])
+}
+
+model BookingStatusHistory {
+  id          String         @id @default(uuid())
+  booking     Booking        @relation(fields: [bookingId], references: [id])
+  bookingId   String
+  fromStatus  BookingStatus?
+  toStatus    BookingStatus
+  changedBy   User?          @relation("StatusChanges", fields: [changedById], references: [id])
+  changedById String?
+  reason      String?
+  createdAt   DateTime       @default(now())
+
+  @@index([bookingId])
+}
+
+enum Role {
+  INSTRUCTOR
+  ADMIN
+}
+
+model User {
+  id             String                 @id @default(uuid())
+  email          String                 @unique
+  name           String
+  password       String                 // bcrypt hash
+  role           Role                   @default(INSTRUCTOR)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  bookingsMarked Booking[]              @relation("BookingsMarked")
+  statusChanges  BookingStatusHistory[] @relation("StatusChanges")
+}
+
+model SystemSetting {
+  key       String   @id
+  value     String
+  label     String
+  type      String   @default("number")
+  updatedAt DateTime @updatedAt
 }
 
 model SystemLog {
