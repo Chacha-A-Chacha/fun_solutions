@@ -24,8 +24,19 @@ import {
   Clock,
   LogOut,
   Settings,
-  Save
+  Save,
+  AlertTriangle,
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { DAY_NAMES, TIME_SLOT_NAMES } from '@/app/lib/constants';
 
 // Shadcn components
@@ -803,6 +814,8 @@ function SettingsPanel() {
   const [settings, setSettings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState({});
+  const [archiving, setArchiving] = useState(false);
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
 
   useEffect(() => {
     axios.get('/api/admin/settings')
@@ -820,6 +833,19 @@ function SettingsPanel() {
       toast.error(err.response?.data?.error || 'Failed to update setting');
     } finally {
       setSaving(prev => ({ ...prev, [key]: false }));
+    }
+  };
+
+  const handleArchive = async () => {
+    setShowArchiveConfirm(false);
+    setArchiving(true);
+    try {
+      const { data } = await axios.post('/api/admin/reset-bookings');
+      toast.success(data.message);
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Archive failed');
+    } finally {
+      setArchiving(false);
     }
   };
 
@@ -854,6 +880,69 @@ function SettingsPanel() {
             onSave={handleSave}
           />
         ))}
+      </div>
+
+      <div className="border-t pt-6">
+        <h3 className="text-lg font-medium text-gray-900 flex items-center mb-1">
+          <RefreshCcw className="mr-2 w-5 h-5 text-blue-600" />
+          Weekly Archive
+        </h3>
+        <p className="text-sm text-gray-500 mb-4">
+          Archive stale bookings from past weeks. Runs automatically every Sunday — use this to trigger manually if needed.
+        </p>
+        <Button
+          variant="outline"
+          disabled={archiving}
+          onClick={() => setShowArchiveConfirm(true)}
+          className="border-blue-200 text-blue-700 hover:bg-blue-50"
+        >
+          {archiving ? (
+            <>
+              <RefreshCcw className="mr-2 w-4 h-4 animate-spin" />
+              Archiving...
+            </>
+          ) : (
+            <>
+              <RefreshCcw className="mr-2 w-4 h-4" />
+              Run Archive Now
+            </>
+          )}
+        </Button>
+
+        <AlertDialog open={showArchiveConfirm} onOpenChange={setShowArchiveConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center">
+                <AlertTriangle className="mr-2 h-5 w-5 text-amber-500" />
+                Archive Stale Bookings
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently update the status of all unresolved bookings from past weeks. This action cannot be undone.
+              </AlertDialogDescription>
+              <div className="space-y-3 text-sm">
+                <div className="bg-amber-50 p-3 rounded-md border border-amber-200 space-y-1">
+                  <div className="text-amber-800 font-medium">The following changes will be made:</div>
+                  <ul className="list-disc list-inside text-amber-700 mt-1">
+                    <li>BOOKED (not attended) will be set to CANCELLED</li>
+                    <li>ATTENDED (not finalized) will be set to INCOMPLETE</li>
+                  </ul>
+                </div>
+                <div className="text-muted-foreground">
+                  Only bookings from previous weeks are affected — current week bookings will not be changed.
+                </div>
+              </div>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleArchive}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Archive Now
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

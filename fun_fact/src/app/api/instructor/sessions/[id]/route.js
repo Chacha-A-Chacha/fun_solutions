@@ -21,7 +21,7 @@ const createSuccessResponse = (data, message, status = 200) => {
  */
 export const PATCH = withRole('INSTRUCTOR', 'ADMIN')(async function PATCH(request, { params }) {
   try {
-    const sessionId = params.id;
+    const { id: sessionId } = await params;
     
     // Validate session ID
     if (!sessionId) {
@@ -100,7 +100,7 @@ export const PATCH = withRole('INSTRUCTOR', 'ADMIN')(async function PATCH(reques
  */
 export const GET = withRole('INSTRUCTOR', 'ADMIN')(async function GET(request, { params }) {
   try {
-    const sessionId = params.id;
+    const { id: sessionId } = await params;
     
     // Validate session ID
     if (!sessionId) {

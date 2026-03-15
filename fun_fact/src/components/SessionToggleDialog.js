@@ -41,7 +41,12 @@ export default function SessionToggleDialog({
             )}
             {isCurrentlyEnabled ? 'Disable Session' : 'Enable Session'}
           </AlertDialogTitle>
-          <AlertDialogDescription className="space-y-4">
+          <AlertDialogDescription>
+            {isCurrentlyEnabled
+              ? 'This will disable the session and prevent new bookings.'
+              : 'This will enable the session and allow new bookings.'}
+          </AlertDialogDescription>
+          <div className="space-y-4 text-sm text-muted-foreground">
             <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
               <div className="font-medium flex items-center">
                 <Calendar className="mr-2 h-4 w-4 text-blue-600" />
@@ -50,23 +55,11 @@ export default function SessionToggleDialog({
               {session.enrolledCount > 0 && isCurrentlyEnabled && (
                 <div className="text-sm mt-2 text-amber-600">
                   This session has {session.enrolledCount} enrolled student(s).
+                  Existing bookings will remain, but you may want to contact the enrolled students.
                 </div>
               )}
             </div>
-            
-            {isCurrentlyEnabled ? (
-              <p>
-                Disabling this session will prevent new students from booking it. 
-                {session.enrolledCount > 0 && (
-                  ' Existing bookings will remain, but you may want to contact the enrolled students.'
-                )}
-              </p>
-            ) : (
-              <p>
-                Enabling this session will make it available for students to book.
-              </p>
-            )}
-          </AlertDialogDescription>
+          </div>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>

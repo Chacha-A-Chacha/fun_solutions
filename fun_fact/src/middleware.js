@@ -64,6 +64,6 @@ export const config = {
     '/instructor/:path*',
     '/api/instructor/:path*',
     '/admin/:path*',
-    '/api/admin/:path*'
+    '/api/admin/((?!reset-bookings).)*',
   ],
 };

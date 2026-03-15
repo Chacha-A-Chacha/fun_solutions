@@ -6,6 +6,7 @@ import { getSetting } from '@/app/lib/utils/settings';
 import { z } from 'zod';
 
 const updateStudentSchema = z.object({
+  id: z.string().regex(/^DR-\d{4,5}-\d{2}$/, 'Student ID must be in format DR-XXXX-XX').optional(),
   name: z.string().min(1, 'Name is required').optional(),
   email: z.string().email('Invalid email format').optional(),
   phoneNumber: z.string().optional().nullable(),
@@ -116,6 +117,19 @@ export const PATCH = withRole('ADMIN')(async function PATCH(request, { params })
     const existing = await prisma.student.findUnique({ where: { id } });
     if (!existing) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 });
+    }
+
+    // Check ID uniqueness if ID is being changed
+    if (result.data.id && result.data.id !== id) {
+      const idTaken = await prisma.student.findUnique({
+        where: { id: result.data.id }
+      });
+      if (idTaken) {
+        return NextResponse.json(
+          { error: 'A student with this ID already exists' },
+          { status: 400 }
+        );
+      }
     }
 
     // Check email uniqueness if email is being changed

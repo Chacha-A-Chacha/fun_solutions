@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -26,6 +27,11 @@ import {
 import { Loader2, Pencil } from 'lucide-react';
 
 const editStudentSchema = z.object({
+  id: z.string()
+    .min(1, { message: 'Student ID is required' })
+    .regex(/^DR-\d{4,5}-\d{2}$/, {
+      message: 'Student ID must be in format DR-XXXX-XX'
+    }),
   name: z.string().min(1, { message: 'Name is required' }).max(100),
   email: z.string().email({ message: 'Invalid email address' }),
   phoneNumber: z.string().optional(),
@@ -37,6 +43,7 @@ export default function EditStudentSheet({ student, open, onOpenChange, onSucces
   const form = useForm({
     resolver: zodResolver(editStudentSchema),
     defaultValues: {
+      id: '',
       name: '',
       email: '',
       phoneNumber: '',
@@ -47,6 +54,7 @@ export default function EditStudentSheet({ student, open, onOpenChange, onSucces
   useEffect(() => {
     if (student && open) {
       form.reset({
+        id: student.id || '',
         name: student.name || '',
         email: student.email || '',
         phoneNumber: student.phoneNumber || '',
@@ -88,10 +96,22 @@ export default function EditStudentSheet({ student, open, onOpenChange, onSucces
         <div className="py-4">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="mx-8 space-y-6">
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                <div className="text-xs text-gray-500 uppercase tracking-wide">Student ID</div>
-                <div className="font-medium text-gray-900 mt-1">{student?.id}</div>
-              </div>
+              <FormField
+                control={form.control}
+                name="id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Student ID*</FormLabel>
+                    <FormControl>
+                      <Input placeholder="DR-XXXX-XX" {...field} disabled={isSubmitting} />
+                    </FormControl>
+                    <FormDescription>
+                      Format: DR-1234-56
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}

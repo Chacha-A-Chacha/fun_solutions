@@ -1,53 +1,49 @@
 import { NextResponse } from "next/server";
 import prisma from "@/app/lib/db/prisma-client";
+import { withRole } from "@/app/lib/utils/auth";
 import { getCurrentWeekMonday } from "@/app/lib/utils/dates";
 
-export async function GET(request) {
-  // Security check — only allow Vercel cron
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+/**
+ * Core archive logic — shared by cron (GET) and manual trigger (POST)
+ */
+async function archiveStaleBookings(trigger = 'cron') {
+  const currentWeekMonday = getCurrentWeekMonday();
 
-  try {
-    const currentWeekMonday = getCurrentWeekMonday();
+  const staleBooked = await prisma.booking.findMany({
+    where: { status: 'BOOKED', weekOf: { lt: currentWeekMonday } },
+    select: { id: true }
+  });
 
-    // Find all BOOKED entries from past weeks (not yet attended/completed)
-    const staleBookings = await prisma.booking.findMany({
-      where: {
-        status: 'BOOKED',
-        weekOf: { lt: currentWeekMonday }
+  const staleAttended = await prisma.booking.findMany({
+    where: { status: 'ATTENDED', weekOf: { lt: currentWeekMonday } },
+    select: { id: true }
+  });
+
+  const bookedIds = staleBooked.map(b => b.id);
+  const attendedIds = staleAttended.map(b => b.id);
+
+  if (bookedIds.length === 0 && attendedIds.length === 0) {
+    await prisma.systemLog.create({
+      data: {
+        action: "BOOKING_ARCHIVE",
+        message: "No stale bookings to archive.",
+        data: { count: 0, trigger },
       },
-      select: { id: true }
     });
 
-    if (staleBookings.length === 0) {
-      await prisma.systemLog.create({
-        data: {
-          action: "BOOKING_ARCHIVE",
-          message: "No stale bookings to archive.",
-          data: { count: 0 },
-        },
-      });
+    return { message: "No stale bookings to archive.", booked: 0, attended: 0 };
+  }
 
-      return NextResponse.json({
-        message: "No stale bookings to archive.",
-        timestamp: new Date().toISOString(),
-      });
-    }
+  const now = new Date();
+  const txOps = [];
 
-    const staleIds = staleBookings.map(b => b.id);
-
-    // Archive: set status to CANCELLED, record history
-    await prisma.$transaction([
+  if (bookedIds.length > 0) {
+    txOps.push(
       prisma.booking.updateMany({
-        where: { id: { in: staleIds } },
-        data: {
-          status: 'CANCELLED',
-          cancelledAt: new Date()
-        }
+        where: { id: { in: bookedIds } },
+        data: { status: 'CANCELLED', cancelledAt: now }
       }),
-      ...staleIds.map(bookingId =>
+      ...bookedIds.map(bookingId =>
         prisma.bookingStatusHistory.create({
           data: {
             bookingId,
@@ -57,30 +53,84 @@ export async function GET(request) {
           }
         })
       )
-    ]);
+    );
+  }
 
-    await prisma.systemLog.create({
-      data: {
-        action: "BOOKING_ARCHIVE",
-        message: `Archived ${staleIds.length} stale bookings.`,
-        data: { count: staleIds.length },
-      },
-    });
+  if (attendedIds.length > 0) {
+    txOps.push(
+      prisma.booking.updateMany({
+        where: { id: { in: attendedIds } },
+        data: { status: 'INCOMPLETE' }
+      }),
+      ...attendedIds.map(bookingId =>
+        prisma.bookingStatusHistory.create({
+          data: {
+            bookingId,
+            fromStatus: 'ATTENDED',
+            toStatus: 'INCOMPLETE',
+            reason: 'Weekly archive — attendance not finalized'
+          }
+        })
+      )
+    );
+  }
 
-    return NextResponse.json({
-      message: `Archived ${staleIds.length} stale bookings.`,
-      timestamp: new Date().toISOString(),
-    });
+  await prisma.$transaction(txOps, { timeout: 30000 });
+
+  const message = `Archived ${bookedIds.length} stale booked, ${attendedIds.length} stale attended.`;
+
+  await prisma.systemLog.create({
+    data: {
+      action: "BOOKING_ARCHIVE",
+      message,
+      data: { booked: bookedIds.length, attended: attendedIds.length, trigger },
+    },
+  });
+
+  return { message, booked: bookedIds.length, attended: attendedIds.length };
+}
+
+/**
+ * GET /api/admin/reset-bookings — Vercel cron trigger
+ */
+export async function GET(request) {
+  const authHeader = request.headers.get("authorization");
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const result = await archiveStaleBookings('cron');
+    return NextResponse.json({ ...result, timestamp: new Date().toISOString() });
   } catch (error) {
     await prisma.systemLog.create({
       data: {
         action: "BOOKING_ARCHIVE_FAILED",
-        message: error.message,
-        data: { error: error.stack },
+        message: String(error.message || 'Unknown error').slice(0, 191),
+        data: { error: error.stack, trigger: 'cron' },
       },
     });
-
     console.error("Booking archive failed:", error);
     return NextResponse.json({ error: "Archive failed" }, { status: 500 });
   }
 }
+
+/**
+ * POST /api/admin/reset-bookings — Manual trigger (admin only)
+ */
+export const POST = withRole('ADMIN')(async function POST() {
+  try {
+    const result = await archiveStaleBookings('manual');
+    return NextResponse.json({ ...result, timestamp: new Date().toISOString() });
+  } catch (error) {
+    await prisma.systemLog.create({
+      data: {
+        action: "BOOKING_ARCHIVE_FAILED",
+        message: String(error.message || 'Unknown error').slice(0, 191),
+        data: { error: error.stack, trigger: 'manual' },
+      },
+    });
+    console.error("Booking archive failed:", error);
+    return NextResponse.json({ error: "Archive failed" }, { status: 500 });
+  }
+});

@@ -22,10 +22,10 @@ export const GET = withRole('INSTRUCTOR', 'ADMIN')(async function GET(request) {
     // Build where clause for search
     const whereClause = search.trim() ? {
       OR: [
-        { id: { contains: search, mode: 'insensitive' } },
-        { name: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-        { phoneNumber: { contains: search, mode: 'insensitive' } }
+        { id: { contains: search } },
+        { name: { contains: search } },
+        { email: { contains: search } },
+        { phoneNumber: { contains: search } }
       ]
     } : {};
 

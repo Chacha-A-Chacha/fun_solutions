@@ -16,7 +16,13 @@ const globalForPrisma = global;
 
 // Prevent multiple instances of Prisma Client in development
 const prismaClientSingleton = () => {
-  return new PrismaClient({ adapter });
+  return new PrismaClient({
+    adapter,
+    transactionOptions: {
+      maxWait: 10000,
+      timeout: 30000,
+    },
+  });
 };
 
 export const prisma = globalForPrisma.prisma || prismaClientSingleton();

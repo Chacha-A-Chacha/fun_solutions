@@ -82,6 +82,10 @@ export function formatDate(date) {
  */
 export function getCurrentWeekMonday() {
   const now = new Date();
+  // After Sunday 14:00 UTC (5 PM EAT), treat as next week
+  if (now.getUTCDay() === 0 && now.getUTCHours() >= 14) {
+    return getWeekMondayFor(new Date(now.getTime() + 24 * 60 * 60 * 1000));
+  }
   return getWeekMondayFor(now);
 }
 

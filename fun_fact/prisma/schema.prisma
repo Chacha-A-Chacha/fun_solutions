@@ -44,7 +44,7 @@ enum BookingStatus {
 
 model Booking {
   id            String        @id @default(uuid())
-  student       Student       @relation(fields: [studentId], references: [id])
+  student       Student       @relation(fields: [studentId], references: [id], onUpdate: Cascade)
   studentId     String
   session       Session       @relation(fields: [sessionId], references: [id])
   sessionId     String
