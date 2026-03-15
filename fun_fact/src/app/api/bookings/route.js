@@ -56,13 +56,21 @@ async function createBooking(request) {
     }
     
     // Create booking with transaction to prevent race conditions
+    const weekOf = getCurrentWeekMonday();
     const booking = await prisma.$transaction(async (tx) => {
       // Lock the session for update (prevent concurrent bookings)
       const session = await tx.session.findUnique({
         where: { id: sessionId },
-        include: { bookings: true }
+        include: {
+          bookings: {
+            where: {
+              weekOf,
+              status: { not: 'CANCELLED' }
+            }
+          }
+        }
       });
-      
+
       // Double-check session capacity
       if (session.bookings.length >= session.capacity) {
         throw new Error(ERROR_MESSAGES.SESSION_FULL);
