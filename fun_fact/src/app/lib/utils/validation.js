@@ -85,6 +85,7 @@ export async function validateSessionBooking(studentId, sessionId) {
     // Fetch dynamic settings
     const maxCapacity = await getSetting('max_capacity_per_session', 4);
     const maxDaysPerWeek = await getSetting('max_days_per_week', 3);
+    const maxSessionsPerDay = await getSetting('max_sessions_per_day', 1);
 
     // Only count active bookings for current week toward capacity
     const weekOf = getCurrentWeekMonday();
@@ -112,15 +113,17 @@ export async function validateSessionBooking(studentId, sessionId) {
       }
     });
 
-    // Check if student already booked this day
-    const alreadyBookedSameDay = studentBookings.some(
+    // Check if student has reached max sessions for this day
+    const sameDayBookings = studentBookings.filter(
       booking => booking.session.day === session.day
     );
 
-    if (alreadyBookedSameDay) {
+    if (sameDayBookings.length >= maxSessionsPerDay) {
       return {
         valid: false,
-        error: ERROR_MESSAGES.DAY_ALREADY_BOOKED
+        error: maxSessionsPerDay === 1
+          ? ERROR_MESSAGES.DAY_ALREADY_BOOKED
+          : `You can only book up to ${maxSessionsPerDay} sessions per day.`
       };
     }
 

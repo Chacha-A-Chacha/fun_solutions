@@ -42,6 +42,14 @@ export const PATCH = withRole('ADMIN')(async function PATCH(request) {
         where: { key },
         data: { value: String(value) }
       });
+
+      // Sync per-session capacity when global setting changes
+      if (key === 'max_capacity_per_session') {
+        await prisma.session.updateMany({
+          data: { capacity: parseInt(value, 10) }
+        });
+      }
+
       results.push({ key, value: String(value), updated: true });
     }
 

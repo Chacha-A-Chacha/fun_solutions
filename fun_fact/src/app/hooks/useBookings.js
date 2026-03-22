@@ -15,6 +15,7 @@ export default function useBookings() {
   const { isAuthenticated } = useAuth();
   const { settings } = useSettings();
   const maxDaysPerWeek = settings.max_days_per_week ?? SESSION_CONSTRAINTS.MAX_DAYS_PER_STUDENT;
+  const maxSessionsPerDay = settings.max_sessions_per_day ?? SESSION_CONSTRAINTS.MAX_SESSIONS_PER_DAY;
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [bookingInProgress, setBookingInProgress] = useState(false);
@@ -52,9 +53,11 @@ export default function useBookings() {
         return false;
       }
       
-      // Check if already booked on this day
+      // Check if max sessions per day reached
       if (isDayBooked(session.day)) {
-        toast.error('You already have a booking for this day');
+        toast.error(maxSessionsPerDay === 1
+          ? 'You already have a booking for this day'
+          : `You can only book up to ${maxSessionsPerDay} sessions per day`);
         return false;
       }
       
@@ -155,9 +158,10 @@ export default function useBookings() {
     return `${dayName}, ${timeSlotName}`;
   };
 
-  // Check if a day is already booked
+  // Check if max sessions per day reached for a given day
   const isDayBooked = (day) => {
-    return bookings.some(booking => booking.day === day);
+    const dayBookingCount = bookings.filter(booking => booking.day === day).length;
+    return dayBookingCount >= maxSessionsPerDay;
   };
 
   // Check if this specific session is booked

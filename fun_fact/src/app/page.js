@@ -55,7 +55,7 @@ export default async function LoginPage() {
                   Maximum {settings.max_capacity_per_session} students per
                   session
                 </li>
-                <li>One session per day</li>
+                <li>{settings.max_sessions_per_day === 1 ? 'One session per day' : `Up to ${settings.max_sessions_per_day} sessions per day`}</li>
               </ul>
             </div>
           </CardContent>
