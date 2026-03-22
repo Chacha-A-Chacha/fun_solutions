@@ -79,6 +79,15 @@ async function main() {
   console.log('Seeding sessions...');
   let createdSessions = 0;
 
+  // Read current capacity setting (fallback to 4 if not yet seeded)
+  let defaultCapacity = 4;
+  try {
+    const capacitySetting = await prisma.systemSetting.findUnique({
+      where: { key: 'max_capacity_per_session' }
+    });
+    if (capacitySetting) defaultCapacity = parseInt(capacitySetting.value, 10);
+  } catch (_) { /* settings table may not exist yet */ }
+
   for (const day of Object.values(DAYS)) {
     const timeSlots = DAY_TIME_SLOTS[day];
 
@@ -94,9 +103,9 @@ async function main() {
 
         if (shouldCreate) {
           await prisma.session.create({
-            data: { day, timeSlot, capacity: 4 }
+            data: { day, timeSlot, capacity: defaultCapacity }
           });
-          console.log(`Created new session for ${day} at time slot ${timeSlot}`);
+          console.log(`Created new session for ${day} at time slot ${timeSlot} (capacity: ${defaultCapacity})`);
           createdSessions++;
         } else {
           console.log(`Session for ${day} at time slot ${timeSlot} already exists, skipping`);
