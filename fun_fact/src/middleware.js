@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const secretKey = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || 'fallback-secret-key-change-in-production'
-);
+if (!process.env.NEXTAUTH_SECRET) {
+  throw new Error('NEXTAUTH_SECRET environment variable is required');
+}
+
+const secretKey = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
 
 const STAFF_AUTH_COOKIE = 'staff-token';
 

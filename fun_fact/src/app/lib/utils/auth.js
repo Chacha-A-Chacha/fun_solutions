@@ -5,10 +5,12 @@ import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
+if (!process.env.NEXTAUTH_SECRET) {
+  throw new Error('NEXTAUTH_SECRET environment variable is required');
+}
+
 // JWT signing key
-const secretKey = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || 'fallback-secret-key-change-in-production'
-);
+const secretKey = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
 
 // Token expiration (24 hours)
 const tokenExpiration = '24h';
