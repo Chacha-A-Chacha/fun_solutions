@@ -73,7 +73,6 @@ export default function StudentsList({ isAdmin = false }) {
   const fetchStudents = useCallback(async (page = 1, search = '', limit = studentsPerPage) => {
     try {
       setSearching(search !== '');
-      if (page === 1) setLoading(true);
 
       const params = new URLSearchParams({
         page: page.toString(),
@@ -134,10 +133,14 @@ export default function StudentsList({ isAdmin = false }) {
     fetchStudents(currentPage, searchQuery, studentsPerPage);
   };
 
-  // Initial load
+  // Initial load — runs once on mount. All other refetches are driven explicitly
+  // by handleSearchChange / handlePageChange / handleLimitChange / refreshData,
+  // so depending on fetchStudents here would just cause duplicate requests when
+  // studentsPerPage changes (it's a useCallback dep).
   useEffect(() => {
     fetchStudents();
-  }, [fetchStudents]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Cleanup timeout on unmount
   useEffect(() => {
