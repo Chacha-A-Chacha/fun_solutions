@@ -85,7 +85,7 @@ export function SessionDataProvider({ children }) {
       
       // Create optimistic booking
       const optimisticBooking = {
-        id: `temp-${Date.now()}`,
+        id: `temp-${crypto.randomUUID()}`,
         sessionId: session.id,
         day: session.day,
         timeSlot: session.timeSlot,
@@ -174,8 +174,12 @@ export function SessionDataProvider({ children }) {
         prevBookings.filter(booking => booking.id !== bookingId)
       );
       
-      // Update sessions state optimistically
-      setSessions(prevSessions => 
+      // Update sessions state optimistically.
+      // Note: we filter by isCurrentStudent because session.bookings entries from
+      // bookSession() retain their temp-* id until the next fetchAllData, so id-based
+      // matching would miss freshly-booked sessions. The (student, session, week)
+      // unique key guarantees at most one current-student booking per session.
+      setSessions(prevSessions =>
         prevSessions.map(s => {
           if (s.id === bookingToCancel.sessionId) {
             return {
