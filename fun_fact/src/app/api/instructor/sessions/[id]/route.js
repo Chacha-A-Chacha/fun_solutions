@@ -19,7 +19,7 @@ const createSuccessResponse = (data, message, status = 200) => {
 /**
  * PATCH /api/instructor/sessions/:id - Update session status (enabled/disabled)
  */
-export const PATCH = withRole('INSTRUCTOR', 'ADMIN')(async function PATCH(request, { params }) {
+export const PATCH = withRole('ADMIN')(async function PATCH(request, { params }) {
   try {
     const { id: sessionId } = await params;
     
