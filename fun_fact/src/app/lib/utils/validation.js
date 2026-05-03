@@ -82,6 +82,13 @@ export async function validateSessionBooking(studentId, sessionId) {
       };
     }
 
+    if (session.metadata?.isEnabled === false) {
+      return {
+        valid: false,
+        error: 'This session is currently unavailable.'
+      };
+    }
+
     // Fetch dynamic settings
     const maxCapacity = await getSetting('max_capacity_per_session', 4);
     const maxDaysPerWeek = await getSetting('max_days_per_week', 3);
