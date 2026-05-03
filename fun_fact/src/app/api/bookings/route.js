@@ -75,14 +75,47 @@ async function createBooking(request) {
       if (session.bookings.length >= session.capacity) {
         throw new Error(ERROR_MESSAGES.SESSION_FULL);
       }
-      
-      // Create the booking
+
+      // The unique key (studentId, sessionId, weekOf) means a previously cancelled
+      // booking still occupies that row — resurrect it instead of inserting a new one.
+      // Only CANCELLED rows are resurrected; any other status indicates a real
+      // duplicate attempt and must fall through to the P2002 error path below.
+      const existing = await tx.booking.findUnique({
+        where: {
+          studentId_sessionId_weekOf: {
+            studentId: student.id,
+            sessionId,
+            weekOf
+          }
+        }
+      });
+
+      if (existing && existing.status === 'CANCELLED') {
+        const resurrected = await tx.booking.update({
+          where: { id: existing.id },
+          data: {
+            status: 'BOOKED',
+            cancelledAt: null,
+            markedById: null
+          }
+        });
+        await tx.bookingStatusHistory.create({
+          data: {
+            bookingId: resurrected.id,
+            fromStatus: existing.status,
+            toStatus: 'BOOKED',
+            reason: 'Re-booked by student'
+          }
+        });
+        return resurrected;
+      }
+
       return tx.booking.create({
         data: {
           student: { connect: { id: student.id } },
           session: { connect: { id: sessionId } },
           status: 'BOOKED',
-          weekOf: getCurrentWeekMonday()
+          weekOf
         }
       });
     });
