@@ -161,13 +161,32 @@ export default function StudentsList({ isAdmin = false }) {
   // Deactivate / reactivate a student (admin only)
   const handleToggleStatus = async () => {
     if (!toggleStudent) return;
+    const { id } = toggleStudent;
     const nextStatus = toggleStudent.status === 'INACTIVE' ? 'ACTIVE' : 'INACTIVE';
     setTogglingStatus(true);
     try {
-      await axios.patch(`/api/instructor/students/${toggleStudent.id}/status`, { status: nextStatus });
+      const { data: res } = await axios.patch(
+        `/api/instructor/students/${id}/status`,
+        { status: nextStatus }
+      );
       toast.success(nextStatus === 'INACTIVE' ? 'Student deactivated' : 'Student reactivated');
+
+      // Optimistic update so the change is visible immediately: flip the row's
+      // status, and drop it if it no longer matches the active/inactive filter.
+      setStudents(prev =>
+        prev
+          .map(s => (s.id === id
+            ? { ...s, status: nextStatus, deactivatedAt: res.student?.deactivatedAt ?? null }
+            : s))
+          .filter(s => (
+            statusFilter === 'active' ? s.status === 'ACTIVE'
+              : statusFilter === 'inactive' ? s.status === 'INACTIVE'
+                : true
+          ))
+      );
+
       setToggleStudent(null);
-      refreshData();
+      refreshData(); // reconcile analytics, counts, and pagination with the server
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to update student status');
     } finally {
