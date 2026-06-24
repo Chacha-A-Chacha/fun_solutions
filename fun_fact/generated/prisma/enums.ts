@@ -9,6 +9,14 @@
 * 🟢 You can import this file directly.
 */
 
+export const StudentStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE'
+} as const
+
+export type StudentStatus = (typeof StudentStatus)[keyof typeof StudentStatus]
+
+
 export const BookingStatus = {
   BOOKED: 'BOOKED',
   ATTENDED: 'ATTENDED',

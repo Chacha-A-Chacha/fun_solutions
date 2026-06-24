@@ -6,6 +6,7 @@ const DEFAULTS = {
   max_days_per_week: 3,
   max_sessions_per_day: 1,
   total_practicals_required: 15,
+  auto_deactivate_on_completion: false,
 };
 
 /**

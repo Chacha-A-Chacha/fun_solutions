@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db/prisma-client';
 import { withRole } from '@/app/lib/utils/auth';
+import { getSetting } from '@/app/lib/utils/settings';
 
 // Valid status transitions
 const VALID_TRANSITIONS = {
@@ -67,7 +68,38 @@ export const PATCH = withRole('INSTRUCTOR', 'ADMIN')(async function PATCH(reques
       })
     ]);
 
-    return NextResponse.json({ booking: updated });
+    // Auto-deactivate the student once they reach the required completed practicals,
+    // if the admin has enabled this in system settings.
+    let autoDeactivated = false;
+    if (status === 'COMPLETED') {
+      const autoDeactivate = await getSetting('auto_deactivate_on_completion', false);
+      if (autoDeactivate) {
+        const totalRequired = await getSetting('total_practicals_required', 15);
+        const completedCount = await prisma.booking.count({
+          where: { studentId: booking.studentId, status: 'COMPLETED' }
+        });
+
+        if (completedCount >= totalRequired) {
+          const { count } = await prisma.student.updateMany({
+            where: { id: booking.studentId, status: 'ACTIVE' },
+            data: { status: 'INACTIVE', deactivatedAt: new Date() }
+          });
+
+          if (count > 0) {
+            autoDeactivated = true;
+            await prisma.systemLog.create({
+              data: {
+                action: 'STUDENT_AUTO_DEACTIVATED',
+                message: `Student ${booking.studentId} auto-deactivated after completing ${completedCount}/${totalRequired} practicals`,
+                data: { studentId: booking.studentId, completedCount, totalRequired }
+              }
+            });
+          }
+        }
+      }
+    }
+
+    return NextResponse.json({ booking: updated, autoDeactivated });
   } catch (error) {
     console.error('Booking status update error:', error);
     return NextResponse.json({ error: 'Failed to update booking status' }, { status: 500 });

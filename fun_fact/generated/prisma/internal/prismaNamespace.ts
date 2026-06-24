@@ -916,6 +916,8 @@ export const StudentScalarFieldEnum = {
   email: 'email',
   name: 'name',
   phoneNumber: 'phoneNumber',
+  status: 'status',
+  deactivatedAt: 'deactivatedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -1120,6 +1122,13 @@ export type SystemLogOrderByRelevanceFieldEnum = (typeof SystemLogOrderByRelevan
  * Reference to a field of type 'String'
  */
 export type StringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String'>
+    
+
+
+/**
+ * Reference to a field of type 'StudentStatus'
+ */
+export type EnumStudentStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'StudentStatus'>
     
 
 

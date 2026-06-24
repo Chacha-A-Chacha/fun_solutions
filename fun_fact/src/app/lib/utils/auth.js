@@ -112,15 +112,22 @@ export async function getAuthenticatedStudent() {
         id: true,
         email: true,
         name: true,
-        phoneNumber: true
+        phoneNumber: true,
+        status: true
       }
     });
-    
+
     if (!student) {
       await clearAuthCookie();
       return null;
     }
-    
+
+    // Inactive students keep their data but lose access — revoke the session
+    if (student.status !== 'ACTIVE') {
+      await clearAuthCookie();
+      return null;
+    }
+
     return student;
   } catch (error) {
     console.error('Authentication error:', error);

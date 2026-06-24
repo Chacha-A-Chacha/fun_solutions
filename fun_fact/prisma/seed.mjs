@@ -151,6 +151,7 @@ async function main() {
     { key: 'max_days_per_week', value: '3', label: 'Maximum days a student can book per week', type: 'number' },
     { key: 'max_sessions_per_day', value: '1', label: 'Maximum sessions per day per student', type: 'number' },
     { key: 'total_practicals_required', value: '15', label: 'Total practicals to complete the course', type: 'number' },
+    { key: 'auto_deactivate_on_completion', value: 'false', label: 'Auto-deactivate students once they complete all required practicals', type: 'boolean' },
   ];
 
   for (const setting of defaultSettings) {

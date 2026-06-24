@@ -87,6 +87,8 @@ export const GET = withRole('INSTRUCTOR', 'ADMIN')(async function GET(request, {
         name: student.name,
         email: student.email,
         phoneNumber: student.phoneNumber,
+        status: student.status,
+        deactivatedAt: student.deactivatedAt,
         createdAt: student.createdAt
       },
       bookings,

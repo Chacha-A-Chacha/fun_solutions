@@ -29,6 +29,8 @@ export type StudentMinAggregateOutputType = {
   email: string | null
   name: string | null
   phoneNumber: string | null
+  status: $Enums.StudentStatus | null
+  deactivatedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -38,6 +40,8 @@ export type StudentMaxAggregateOutputType = {
   email: string | null
   name: string | null
   phoneNumber: string | null
+  status: $Enums.StudentStatus | null
+  deactivatedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -47,6 +51,8 @@ export type StudentCountAggregateOutputType = {
   email: number
   name: number
   phoneNumber: number
+  status: number
+  deactivatedAt: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -58,6 +64,8 @@ export type StudentMinAggregateInputType = {
   email?: true
   name?: true
   phoneNumber?: true
+  status?: true
+  deactivatedAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -67,6 +75,8 @@ export type StudentMaxAggregateInputType = {
   email?: true
   name?: true
   phoneNumber?: true
+  status?: true
+  deactivatedAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -76,6 +86,8 @@ export type StudentCountAggregateInputType = {
   email?: true
   name?: true
   phoneNumber?: true
+  status?: true
+  deactivatedAt?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -158,6 +170,8 @@ export type StudentGroupByOutputType = {
   email: string
   name: string
   phoneNumber: string | null
+  status: $Enums.StudentStatus
+  deactivatedAt: Date | null
   createdAt: Date
   updatedAt: Date
   _count: StudentCountAggregateOutputType | null
@@ -188,6 +202,8 @@ export type StudentWhereInput = {
   email?: Prisma.StringFilter<"Student"> | string
   name?: Prisma.StringFilter<"Student"> | string
   phoneNumber?: Prisma.StringNullableFilter<"Student"> | string | null
+  status?: Prisma.EnumStudentStatusFilter<"Student"> | $Enums.StudentStatus
+  deactivatedAt?: Prisma.DateTimeNullableFilter<"Student"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Student"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Student"> | Date | string
   bookings?: Prisma.BookingListRelationFilter
@@ -198,6 +214,8 @@ export type StudentOrderByWithRelationInput = {
   email?: Prisma.SortOrder
   name?: Prisma.SortOrder
   phoneNumber?: Prisma.SortOrderInput | Prisma.SortOrder
+  status?: Prisma.SortOrder
+  deactivatedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   bookings?: Prisma.BookingOrderByRelationAggregateInput
@@ -212,6 +230,8 @@ export type StudentWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.StudentWhereInput | Prisma.StudentWhereInput[]
   name?: Prisma.StringFilter<"Student"> | string
   phoneNumber?: Prisma.StringNullableFilter<"Student"> | string | null
+  status?: Prisma.EnumStudentStatusFilter<"Student"> | $Enums.StudentStatus
+  deactivatedAt?: Prisma.DateTimeNullableFilter<"Student"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Student"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Student"> | Date | string
   bookings?: Prisma.BookingListRelationFilter
@@ -222,6 +242,8 @@ export type StudentOrderByWithAggregationInput = {
   email?: Prisma.SortOrder
   name?: Prisma.SortOrder
   phoneNumber?: Prisma.SortOrderInput | Prisma.SortOrder
+  status?: Prisma.SortOrder
+  deactivatedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.StudentCountOrderByAggregateInput
@@ -237,6 +259,8 @@ export type StudentScalarWhereWithAggregatesInput = {
   email?: Prisma.StringWithAggregatesFilter<"Student"> | string
   name?: Prisma.StringWithAggregatesFilter<"Student"> | string
   phoneNumber?: Prisma.StringNullableWithAggregatesFilter<"Student"> | string | null
+  status?: Prisma.EnumStudentStatusWithAggregatesFilter<"Student"> | $Enums.StudentStatus
+  deactivatedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Student"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Student"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Student"> | Date | string
 }
@@ -246,6 +270,8 @@ export type StudentCreateInput = {
   email: string
   name: string
   phoneNumber?: string | null
+  status?: $Enums.StudentStatus
+  deactivatedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   bookings?: Prisma.BookingCreateNestedManyWithoutStudentInput
@@ -256,6 +282,8 @@ export type StudentUncheckedCreateInput = {
   email: string
   name: string
   phoneNumber?: string | null
+  status?: $Enums.StudentStatus
+  deactivatedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   bookings?: Prisma.BookingUncheckedCreateNestedManyWithoutStudentInput
@@ -266,6 +294,8 @@ export type StudentUpdateInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumStudentStatusFieldUpdateOperationsInput | $Enums.StudentStatus
+  deactivatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   bookings?: Prisma.BookingUpdateManyWithoutStudentNestedInput
@@ -276,6 +306,8 @@ export type StudentUncheckedUpdateInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumStudentStatusFieldUpdateOperationsInput | $Enums.StudentStatus
+  deactivatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   bookings?: Prisma.BookingUncheckedUpdateManyWithoutStudentNestedInput
@@ -286,6 +318,8 @@ export type StudentCreateManyInput = {
   email: string
   name: string
   phoneNumber?: string | null
+  status?: $Enums.StudentStatus
+  deactivatedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -295,6 +329,8 @@ export type StudentUpdateManyMutationInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumStudentStatusFieldUpdateOperationsInput | $Enums.StudentStatus
+  deactivatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -304,6 +340,8 @@ export type StudentUncheckedUpdateManyInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumStudentStatusFieldUpdateOperationsInput | $Enums.StudentStatus
+  deactivatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -319,6 +357,8 @@ export type StudentCountOrderByAggregateInput = {
   email?: Prisma.SortOrder
   name?: Prisma.SortOrder
   phoneNumber?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  deactivatedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -328,6 +368,8 @@ export type StudentMaxOrderByAggregateInput = {
   email?: Prisma.SortOrder
   name?: Prisma.SortOrder
   phoneNumber?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  deactivatedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -337,6 +379,8 @@ export type StudentMinOrderByAggregateInput = {
   email?: Prisma.SortOrder
   name?: Prisma.SortOrder
   phoneNumber?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  deactivatedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -352,6 +396,14 @@ export type StringFieldUpdateOperationsInput = {
 
 export type NullableStringFieldUpdateOperationsInput = {
   set?: string | null
+}
+
+export type EnumStudentStatusFieldUpdateOperationsInput = {
+  set?: $Enums.StudentStatus
+}
+
+export type NullableDateTimeFieldUpdateOperationsInput = {
+  set?: Date | string | null
 }
 
 export type DateTimeFieldUpdateOperationsInput = {
@@ -377,6 +429,8 @@ export type StudentCreateWithoutBookingsInput = {
   email: string
   name: string
   phoneNumber?: string | null
+  status?: $Enums.StudentStatus
+  deactivatedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -386,6 +440,8 @@ export type StudentUncheckedCreateWithoutBookingsInput = {
   email: string
   name: string
   phoneNumber?: string | null
+  status?: $Enums.StudentStatus
+  deactivatedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -411,6 +467,8 @@ export type StudentUpdateWithoutBookingsInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumStudentStatusFieldUpdateOperationsInput | $Enums.StudentStatus
+  deactivatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -420,6 +478,8 @@ export type StudentUncheckedUpdateWithoutBookingsInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumStudentStatusFieldUpdateOperationsInput | $Enums.StudentStatus
+  deactivatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -460,6 +520,8 @@ export type StudentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   email?: boolean
   name?: boolean
   phoneNumber?: boolean
+  status?: boolean
+  deactivatedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   bookings?: boolean | Prisma.Student$bookingsArgs<ExtArgs>
@@ -473,11 +535,13 @@ export type StudentSelectScalar = {
   email?: boolean
   name?: boolean
   phoneNumber?: boolean
+  status?: boolean
+  deactivatedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type StudentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "name" | "phoneNumber" | "createdAt" | "updatedAt", ExtArgs["result"]["student"]>
+export type StudentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "name" | "phoneNumber" | "status" | "deactivatedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["student"]>
 export type StudentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   bookings?: boolean | Prisma.Student$bookingsArgs<ExtArgs>
   _count?: boolean | Prisma.StudentCountOutputTypeDefaultArgs<ExtArgs>
@@ -493,6 +557,8 @@ export type $StudentPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     email: string
     name: string
     phoneNumber: string | null
+    status: $Enums.StudentStatus
+    deactivatedAt: Date | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["student"]>
@@ -869,6 +935,8 @@ export interface StudentFieldRefs {
   readonly email: Prisma.FieldRef<"Student", 'String'>
   readonly name: Prisma.FieldRef<"Student", 'String'>
   readonly phoneNumber: Prisma.FieldRef<"Student", 'String'>
+  readonly status: Prisma.FieldRef<"Student", 'StudentStatus'>
+  readonly deactivatedAt: Prisma.FieldRef<"Student", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"Student", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Student", 'DateTime'>
 }

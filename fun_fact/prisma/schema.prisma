@@ -10,14 +10,23 @@ datasource db {
   provider = "mysql"
 }
 
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+}
+
 model Student {
-  id          String    @id // Student ID like DR-4824-25
-  email       String    @unique
-  name        String
-  phoneNumber String?
-  bookings    Booking[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id            String        @id // Student ID like DR-4824-25
+  email         String        @unique
+  name          String
+  phoneNumber   String?
+  status        StudentStatus @default(ACTIVE)
+  deactivatedAt DateTime?
+  bookings      Booking[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([status])
 }
 
 model Session {

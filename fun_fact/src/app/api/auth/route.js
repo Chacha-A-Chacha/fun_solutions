@@ -36,6 +36,18 @@ export async function POST(request) {
       );
     }
 
+    // Block deactivated students from logging back in (data is kept, access is not)
+    const existingStudent = await prisma.student.findUnique({
+      where: { id },
+      select: { status: true }
+    });
+    if (existingStudent && existingStudent.status !== 'ACTIVE') {
+      return NextResponse.json(
+        { error: 'This account is no longer active. Please contact the administrator.' },
+        { status: 403 }
+      );
+    }
+
     // Create or update student record
     const student = await prisma.student.upsert({
         where: { id },
@@ -127,7 +139,8 @@ export async function GET(request) {
         id: true,
         email: true,
         name: true,
-        phoneNumber: true
+        phoneNumber: true,
+        status: true
       }
     });
 
@@ -139,8 +152,18 @@ export async function GET(request) {
       );
     }
 
+    if (student.status !== 'ACTIVE') {
+      await clearAuthCookie(); // Revoke access for deactivated students
+      return NextResponse.json(
+        { error: 'This account is no longer active.' },
+        { status: 403 }
+      );
+    }
+
+    const { status: _status, ...studentData } = student;
+
     return NextResponse.json({
-      student,
+      student: studentData,
       message: 'Authentication successful'
     });
   } catch (error) {

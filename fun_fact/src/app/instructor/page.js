@@ -953,6 +953,47 @@ function SettingCard({ setting, saving, onSave }) {
   const [value, setValue] = useState(setting.value);
   const hasChanged = value !== setting.value;
 
+  // Boolean settings render as an immediate-save toggle
+  if (setting.type === 'boolean') {
+    const enabled = value === 'true';
+    const toggle = () => {
+      const next = enabled ? 'false' : 'true';
+      setValue(next);
+      onSave(setting.key, next);
+    };
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-start justify-between gap-2">
+            <Label htmlFor={setting.key} className="text-sm font-medium text-gray-700">
+              {setting.label}
+            </Label>
+            <Button
+              id={setting.key}
+              variant="ghost"
+              size="sm"
+              disabled={saving}
+              onClick={toggle}
+              className={`shrink-0 ${enabled ? 'text-emerald-600 hover:text-emerald-700' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              {saving ? (
+                <RefreshCcw className="w-5 h-5 animate-spin" />
+              ) : enabled ? (
+                <ToggleRight className="w-6 h-6" />
+              ) : (
+                <ToggleLeft className="w-6 h-6" />
+              )}
+              <span className="ml-1 text-xs">{enabled ? 'On' : 'Off'}</span>
+            </Button>
+          </div>
+          <p className="text-xs text-gray-400 mt-1">
+            Key: {setting.key}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardContent className="pt-6">

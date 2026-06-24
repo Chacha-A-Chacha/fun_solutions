@@ -15,12 +15,21 @@ export const GET = withRole('INSTRUCTOR', 'ADMIN')(async function GET(request) {
     // Parse query parameters for filtering/pagination
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
+    const statusParam = (searchParams.get('status') || 'active').toLowerCase();
     const page = parseInt(searchParams.get('page')) || 1;
     const limit = parseInt(searchParams.get('limit')) || 50;
     const offset = (page - 1) * limit;
 
+    // Status scope: active (default) hides deactivated students from listings/stats,
+    // inactive shows only deactivated, all shows everyone.
+    const statusFilter = statusParam === 'inactive'
+      ? { status: 'INACTIVE' }
+      : statusParam === 'all'
+        ? {}
+        : { status: 'ACTIVE' };
+
     // Build where clause for search
-    const whereClause = search.trim() ? {
+    const searchFilter = search.trim() ? {
       OR: [
         { id: { contains: search } },
         { name: { contains: search } },
@@ -28,6 +37,8 @@ export const GET = withRole('INSTRUCTOR', 'ADMIN')(async function GET(request) {
         { phoneNumber: { contains: search } }
       ]
     } : {};
+
+    const whereClause = { ...statusFilter, ...searchFilter };
 
     // Get total count for pagination
     const totalCount = await prisma.student.count({ where: whereClause });
@@ -87,6 +98,8 @@ export const GET = withRole('INSTRUCTOR', 'ADMIN')(async function GET(request) {
         name: student.name,
         email: student.email,
         phoneNumber: student.phoneNumber,
+        status: student.status,
+        deactivatedAt: student.deactivatedAt,
         createdAt: student.createdAt,
         updatedAt: student.updatedAt,
         bookings: bookings,
@@ -114,7 +127,10 @@ export const GET = withRole('INSTRUCTOR', 'ADMIN')(async function GET(request) {
     });
 
     const totalActiveBookings = await prisma.booking.count({
-      where: { status: { not: 'CANCELLED' } }
+      where: {
+        status: { not: 'CANCELLED' },
+        ...(statusParam === 'all' ? {} : { student: statusFilter })
+      }
     });
 
     const analytics = {

@@ -20,7 +20,9 @@ import {
   GraduationCap,
   AlertTriangle,
   History,
-  Pencil
+  Pencil,
+  Ban,
+  RotateCcw
 } from 'lucide-react';
 
 // Shadcn components
@@ -45,6 +47,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import StudentHistorySheet from '@/components/StudentHistorySheet';
 import EditStudentSheet from '@/components/EditStudentSheet';
 
@@ -59,6 +71,7 @@ export default function StudentsList({ isAdmin = false }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState(null);
   const [studentsPerPage, setStudentsPerPage] = useState(25);
+  const [statusFilter, setStatusFilter] = useState('active');
 
   // Student history sheet
   const [historyStudent, setHistoryStudent] = useState(null);
@@ -66,17 +79,22 @@ export default function StudentsList({ isAdmin = false }) {
   // Edit student sheet
   const [editStudent, setEditStudent] = useState(null);
 
+  // Deactivate/reactivate confirmation
+  const [toggleStudent, setToggleStudent] = useState(null);
+  const [togglingStatus, setTogglingStatus] = useState(false);
+
   // Debounced search
   const [searchTimeout, setSearchTimeout] = useState(null);
 
   // Fetch students data
-  const fetchStudents = useCallback(async (page = 1, search = '', limit = studentsPerPage) => {
+  const fetchStudents = useCallback(async (page = 1, search = '', limit = studentsPerPage, status = statusFilter) => {
     try {
       setSearching(search !== '');
 
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
+        status,
         ...(search && { search })
       });
 
@@ -94,7 +112,7 @@ export default function StudentsList({ isAdmin = false }) {
       setLoading(false);
       setSearching(false);
     }
-  }, [studentsPerPage]);
+  }, [studentsPerPage, statusFilter]);
 
   // Handle search with debouncing
   const handleSearchChange = (e) => {
@@ -128,9 +146,33 @@ export default function StudentsList({ isAdmin = false }) {
     fetchStudents(1, searchQuery, parseInt(newLimit));
   };
 
+  // Handle status filter change (active / inactive / all)
+  const handleStatusFilterChange = (newStatus) => {
+    setStatusFilter(newStatus);
+    setCurrentPage(1);
+    fetchStudents(1, searchQuery, studentsPerPage, newStatus);
+  };
+
   // Refresh data
   const refreshData = () => {
-    fetchStudents(currentPage, searchQuery, studentsPerPage);
+    fetchStudents(currentPage, searchQuery, studentsPerPage, statusFilter);
+  };
+
+  // Deactivate / reactivate a student (admin only)
+  const handleToggleStatus = async () => {
+    if (!toggleStudent) return;
+    const nextStatus = toggleStudent.status === 'INACTIVE' ? 'ACTIVE' : 'INACTIVE';
+    setTogglingStatus(true);
+    try {
+      await axios.patch(`/api/instructor/students/${toggleStudent.id}/status`, { status: nextStatus });
+      toast.success(nextStatus === 'INACTIVE' ? 'Student deactivated' : 'Student reactivated');
+      setToggleStudent(null);
+      refreshData();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to update student status');
+    } finally {
+      setTogglingStatus(false);
+    }
   };
 
   // Initial load — runs once on mount. All other refetches are driven explicitly
@@ -323,6 +365,17 @@ export default function StudentsList({ isAdmin = false }) {
               )}
             </div>
 
+            <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
+              <SelectTrigger className="w-full md:w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="all">All</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Select value={studentsPerPage.toString()} onValueChange={handleLimitChange}>
               <SelectTrigger className="w-full md:w-32">
                 <SelectValue />
@@ -351,7 +404,14 @@ export default function StudentsList({ isAdmin = false }) {
                 {students.map((student) => (
                   <TableRow key={student.id}>
                     <TableCell>
-                      <div className="font-medium text-gray-900">{student.name}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900">{student.name}</span>
+                        {student.status === 'INACTIVE' && (
+                          <Badge variant="secondary" className="bg-gray-200 text-gray-600 text-xs">
+                            Inactive
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
@@ -407,6 +467,19 @@ export default function StudentsList({ isAdmin = false }) {
                             <Pencil className="w-3 h-3" />
                           </Button>
                         )}
+                        {isAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`text-xs ${student.status === 'INACTIVE' ? 'text-emerald-600 hover:text-emerald-800' : 'text-red-500 hover:text-red-700'}`}
+                            onClick={() => setToggleStudent(student)}
+                            title={student.status === 'INACTIVE' ? 'Reactivate student' : 'Deactivate student'}
+                          >
+                            {student.status === 'INACTIVE'
+                              ? <RotateCcw className="w-3 h-3" />
+                              : <Ban className="w-3 h-3" />}
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -422,7 +495,12 @@ export default function StudentsList({ isAdmin = false }) {
                 <CardContent className="p-4">
                   <div className="space-y-3">
                     <div className="flex justify-between items-start">
-                      <div className="font-medium text-gray-900">{student.name}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900">{student.name}</span>
+                        {student.status === 'INACTIVE' && (
+                          <Badge variant="secondary" className="bg-gray-200 text-gray-600 text-xs">Inactive</Badge>
+                        )}
+                      </div>
                       {student.isComplete && (
                         <Badge className="bg-emerald-100 text-emerald-800 text-xs">Done</Badge>
                       )}
@@ -473,6 +551,18 @@ export default function StudentsList({ isAdmin = false }) {
                         >
                           <Pencil className="w-3 h-3 mr-1" />
                           Edit
+                        </Button>
+                      )}
+                      {isAdmin && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className={`text-xs ${student.status === 'INACTIVE' ? 'text-emerald-600 border-emerald-200' : 'text-red-600 border-red-200'}`}
+                          onClick={() => setToggleStudent(student)}
+                        >
+                          {student.status === 'INACTIVE'
+                            ? <><RotateCcw className="w-3 h-3 mr-1" />Reactivate</>
+                            : <><Ban className="w-3 h-3 mr-1" />Deactivate</>}
                         </Button>
                       )}
                     </div>
@@ -553,6 +643,8 @@ export default function StudentsList({ isAdmin = false }) {
       <StudentHistorySheet
         studentId={historyStudent?.id}
         studentName={historyStudent?.name}
+        isAdmin={isAdmin}
+        onStatusChange={refreshData}
         open={!!historyStudent}
         onOpenChange={(open) => { if (!open) setHistoryStudent(null); }}
       />
@@ -567,6 +659,41 @@ export default function StudentsList({ isAdmin = false }) {
           refreshData();
         }}
       />
+
+      {/* Deactivate / Reactivate confirmation */}
+      <AlertDialog open={!!toggleStudent} onOpenChange={(open) => { if (!open) setToggleStudent(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center">
+              {toggleStudent?.status === 'INACTIVE' ? (
+                <RotateCcw className="mr-2 h-5 w-5 text-emerald-500" />
+              ) : (
+                <Ban className="mr-2 h-5 w-5 text-red-500" />
+              )}
+              {toggleStudent?.status === 'INACTIVE' ? 'Reactivate Student' : 'Deactivate Student'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {toggleStudent?.status === 'INACTIVE' ? (
+                <>This will restore access for <span className="font-medium">{toggleStudent?.name}</span> and show them in listings and stats again.</>
+              ) : (
+                <><span className="font-medium">{toggleStudent?.name}</span> will lose access to log in and book sessions. Their data and full history are kept and can still be viewed via the Inactive filter.</>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={togglingStatus}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleToggleStatus(); }}
+              disabled={togglingStatus}
+              className={toggleStudent?.status === 'INACTIVE' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}
+            >
+              {togglingStatus
+                ? <RefreshCcw className="w-4 h-4 animate-spin" />
+                : toggleStudent?.status === 'INACTIVE' ? 'Reactivate' : 'Deactivate'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
