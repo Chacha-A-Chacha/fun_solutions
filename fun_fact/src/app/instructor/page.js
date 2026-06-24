@@ -11,7 +11,6 @@ import {
   Users,
   ChevronDown,
   ChevronUp,
-  Download,
   Filter,
   Plus,
   RefreshCcw,
@@ -68,6 +67,7 @@ import CreateStudentForm from '@/components/CreateStudentForm';
 import AddInstructorForm from '@/components/AddInstructorForm';
 import SessionToggleDialog from '@/components/SessionToggleDialog';
 import StudentsList from '@/components/StudentsList';
+import ExportDataSheet from '@/components/ExportDataSheet';
 import PoweredByFooter from '@/components/PoweredByFooter';
 
 export default function InstructorDashboard() {
@@ -320,26 +320,8 @@ export default function InstructorDashboard() {
                 </Sheet>
               )}
 
-              {/* Export Button */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full sm:w-auto bg-transparent text-blue-100 border-blue-400 hover:bg-blue-800 hover:text-white"
-                      onClick={() => {
-                        window.open('/api/instructor/export', '_blank');
-                      }}
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Export CSV
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Download all session data as CSV</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              {/* Export Button (configurable) */}
+              <ExportDataSheet />
 
               {/* Refresh Button */}
               <Button
