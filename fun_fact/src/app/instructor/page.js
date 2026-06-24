@@ -25,6 +25,9 @@ import {
   Settings,
   Save,
   AlertTriangle,
+  UserX,
+  Zap,
+  SlidersHorizontal,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -61,6 +64,7 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 // Custom components
 import CreateStudentForm from '@/components/CreateStudentForm';
@@ -792,6 +796,47 @@ function StudentRow({ student, onStatusUpdate }) {
 }
 
 // Settings Panel Component (Admin only)
+// Presentation metadata for known settings: icon, helper text, units, and
+// (for booleans) the two radio choices with their own descriptions.
+const SETTING_META = {
+  max_capacity_per_session: {
+    icon: Users,
+    description: 'Maximum students that can book the same session.',
+    unit: 'students',
+  },
+  max_days_per_week: {
+    icon: Calendar,
+    description: 'Different days a student may book within one week.',
+    unit: 'days',
+  },
+  max_sessions_per_day: {
+    icon: Clock,
+    description: 'Sessions a student may book on a single day.',
+    unit: 'sessions',
+  },
+  total_practicals_required: {
+    icon: GraduationCap,
+    description: 'Completed practicals required to finish the course.',
+    unit: 'practicals',
+  },
+  auto_deactivate_on_completion: {
+    icon: UserX,
+    description: 'What happens once a student completes all required practicals.',
+    options: [
+      {
+        value: 'true',
+        title: 'Deactivate automatically',
+        description: 'Revoke access as soon as the student is complete. Their data and history are kept.',
+      },
+      {
+        value: 'false',
+        title: 'Keep active',
+        description: 'The student stays active until an admin deactivates them manually.',
+      },
+    ],
+  },
+};
+
 function SettingsPanel() {
   const [settings, setSettings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -841,28 +886,60 @@ function SettingsPanel() {
     );
   }
 
+  const numericSettings = settings.filter((s) => s.type !== 'boolean');
+  const toggleSettings = settings.filter((s) => s.type === 'boolean');
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 flex items-center mb-1">
+        <h3 className="text-lg font-semibold text-gray-900 flex items-center mb-1">
           <Settings className="mr-2 w-5 h-5 text-blue-600" />
           System Settings
         </h3>
         <p className="text-sm text-gray-500">
-          Configure system-wide constraints. Changes take effect immediately.
+          Configure how booking and student management behaves. Changes take effect immediately.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {settings.map((setting) => (
-          <SettingCard
-            key={setting.key}
-            setting={setting}
-            saving={saving[setting.key]}
-            onSave={handleSave}
-          />
-        ))}
-      </div>
+      {/* Booking rules */}
+      {numericSettings.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="w-4 h-4 text-gray-400" />
+            <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Booking rules</h4>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {numericSettings.map((setting) => (
+              <SettingCard
+                key={setting.key}
+                setting={setting}
+                saving={saving[setting.key]}
+                onSave={handleSave}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Automation */}
+      {toggleSettings.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-gray-400" />
+            <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Automation</h4>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {toggleSettings.map((setting) => (
+              <SettingCard
+                key={setting.key}
+                setting={setting}
+                saving={saving[setting.key]}
+                onSave={handleSave}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="border-t pt-6">
         <h3 className="text-lg font-medium text-gray-900 flex items-center mb-1">
@@ -930,67 +1007,98 @@ function SettingsPanel() {
   );
 }
 
+// Small header shared by every setting card: icon chip + label + description
+function SettingCardHeader({ Icon, label, description, htmlFor, saving }) {
+  return (
+    <div className="flex items-start gap-3">
+      {Icon && (
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+          <Icon className="h-5 w-5" />
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <Label htmlFor={htmlFor} className="text-sm font-semibold text-gray-900">
+            {label}
+          </Label>
+          {saving && <RefreshCcw className="h-3.5 w-3.5 animate-spin text-gray-400" />}
+        </div>
+        {description && <p className="text-xs text-gray-500 mt-0.5">{description}</p>}
+      </div>
+    </div>
+  );
+}
+
 // Individual setting card
 function SettingCard({ setting, saving, onSave }) {
+  const meta = SETTING_META[setting.key] || {};
+  const Icon = meta.icon;
   const [value, setValue] = useState(setting.value);
   const hasChanged = value !== setting.value;
 
-  // Boolean settings render as an immediate-save toggle
+  // Boolean settings render as a radio group with two described choices
   if (setting.type === 'boolean') {
-    const enabled = value === 'true';
-    const toggle = () => {
-      const next = enabled ? 'false' : 'true';
+    const options = meta.options || [
+      { value: 'true', title: 'Enabled', description: 'Turn this behavior on.' },
+      { value: 'false', title: 'Disabled', description: 'Turn this behavior off.' },
+    ];
+    const handleChange = (next) => {
+      if (next === value) return;
       setValue(next);
       onSave(setting.key, next);
     };
     return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-start justify-between gap-2">
-            <Label htmlFor={setting.key} className="text-sm font-medium text-gray-700">
-              {setting.label}
-            </Label>
-            <Button
-              id={setting.key}
-              variant="ghost"
-              size="sm"
-              disabled={saving}
-              onClick={toggle}
-              className={`shrink-0 ${enabled ? 'text-emerald-600 hover:text-emerald-700' : 'text-gray-400 hover:text-gray-600'}`}
-            >
-              {saving ? (
-                <RefreshCcw className="w-5 h-5 animate-spin" />
-              ) : enabled ? (
-                <ToggleRight className="w-6 h-6" />
-              ) : (
-                <ToggleLeft className="w-6 h-6" />
-              )}
-              <span className="ml-1 text-xs">{enabled ? 'On' : 'Off'}</span>
-            </Button>
-          </div>
-          <p className="text-xs text-gray-400 mt-1">
-            Key: {setting.key}
-          </p>
+      <Card className="border-gray-200 shadow-sm">
+        <CardContent className="p-5 space-y-4">
+          <SettingCardHeader Icon={Icon} label={setting.label} description={meta.description} saving={saving} />
+          <RadioGroup value={value} onValueChange={handleChange} disabled={saving} className="gap-2">
+            {options.map((opt) => {
+              const active = value === opt.value;
+              const id = `${setting.key}-${opt.value}`;
+              return (
+                <label
+                  key={opt.value}
+                  htmlFor={id}
+                  className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
+                    active
+                      ? 'border-blue-500 bg-blue-50/60 ring-1 ring-blue-200'
+                      : 'border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  <RadioGroupItem id={id} value={opt.value} className="mt-0.5" />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-gray-900">{opt.title}</span>
+                    <span className="block text-xs text-gray-500 mt-0.5">{opt.description}</span>
+                  </span>
+                </label>
+              );
+            })}
+          </RadioGroup>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <Label htmlFor={setting.key} className="text-sm font-medium text-gray-700">
-          {setting.label}
-        </Label>
-        <div className="flex items-center gap-2 mt-2">
-          <Input
-            id={setting.key}
-            type={setting.type === 'number' ? 'number' : 'text'}
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            className="flex-1"
-            min={setting.type === 'number' ? 1 : undefined}
-          />
+    <Card className="border-gray-200 shadow-sm">
+      <CardContent className="p-5 space-y-3">
+        <SettingCardHeader Icon={Icon} label={setting.label} description={meta.description} htmlFor={setting.key} saving={saving} />
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Input
+              id={setting.key}
+              type={setting.type === 'number' ? 'number' : 'text'}
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              className={meta.unit ? 'pr-20' : ''}
+              min={setting.type === 'number' ? 1 : undefined}
+            />
+            {meta.unit && (
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                {meta.unit}
+              </span>
+            )}
+          </div>
           <Button
             size="sm"
             disabled={!hasChanged || saving}
@@ -1004,9 +1112,6 @@ function SettingCard({ setting, saving, onSave }) {
             )}
           </Button>
         </div>
-        <p className="text-xs text-gray-400 mt-1">
-          Key: {setting.key}
-        </p>
       </CardContent>
     </Card>
   );
