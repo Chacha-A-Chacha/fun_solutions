@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { LogIn } from 'lucide-react';
+import { LogIn, Loader2 } from 'lucide-react';
 
 export default function StaffLoginForm() {
   const [email, setEmail] = useState('');
@@ -23,10 +23,11 @@ export default function StaffLoginForm() {
       const { data } = await axios.post('/api/auth/staff', { email, password });
       toast.success(data.message);
       router.push('/instructor');
+      // Keep the form disabled while the dashboard route loads and replaces
+      // this page, so it doesn't look idle/re-enterable mid-redirect.
     } catch (error) {
       const message = error.response?.data?.error || 'Login failed';
       toast.error(message);
-    } finally {
       setLoading(false);
     }
   };
@@ -59,8 +60,12 @@ value={password}
         />
       </div>
       <Button type="submit" className="w-full bg-blue-900 hover:bg-blue-800 text-white" disabled={loading}>
-        <LogIn className="w-4 h-4 mr-2" />
-        {loading ? 'Signing in...' : 'Sign In'}
+        {loading ? (
+          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+        ) : (
+          <LogIn className="w-4 h-4 mr-2" />
+        )}
+        {loading ? 'Signing you in…' : 'Sign In'}
       </Button>
     </form>
   );

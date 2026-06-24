@@ -6,7 +6,7 @@ import { useAuth } from '@/app/hooks/useAuth';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { LogIn } from 'lucide-react';
+import { LogIn, Loader2 } from 'lucide-react';
 
 export default function StudentLoginForm() {
   const { login, loading } = useAuth();
@@ -21,10 +21,13 @@ export default function StudentLoginForm() {
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
-    try {
-      await login(data);
+    const ok = await login(data);
+    if (ok) {
       reset();
-    } finally {
+      // Leave the form disabled on success: login() has already triggered the
+      // redirect to /dashboard, and this form stays mounted until that route
+      // loads. Re-enabling here makes the page look idle mid-redirect.
+    } else {
       setIsSubmitting(false);
     }
   };
@@ -74,8 +77,12 @@ disabled={disabled}
       </div>
 
       <Button type="submit" className="w-full bg-blue-900 hover:bg-blue-800 text-white" disabled={disabled}>
-        <LogIn className="w-4 h-4 mr-2" />
-        {disabled ? 'Please wait...' : 'Continue'}
+        {disabled ? (
+          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+        ) : (
+          <LogIn className="w-4 h-4 mr-2" />
+        )}
+        {isSubmitting ? 'Signing you in…' : disabled ? 'Please wait…' : 'Continue'}
       </Button>
     </form>
   );
