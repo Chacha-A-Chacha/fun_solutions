@@ -6,7 +6,7 @@ export default function PoweredByFooter({ variant = "light" }) {
   return (
     <footer className="py-4 text-center">
       <a
-        href="https://www.chach-a.com"
+        href="https://chacha.ke"
         target="_blank"
         rel="noopener noreferrer"
         className={`inline-flex items-center px-4 py-2 rounded-lg transition-all duration-300 transform hover:-translate-y-0.5 ${
@@ -21,7 +21,7 @@ export default function PoweredByFooter({ variant = "light" }) {
           Powered by
         </span>
         <img
-          src="https://www.chach-a.com/logoMark.svg"
+          src="https://chacha.ke/logoMark.svg"
           alt="Chacha Technologies"
           className="h-4 w-auto mr-1 hover:scale-110 transition-transform duration-300"
         />

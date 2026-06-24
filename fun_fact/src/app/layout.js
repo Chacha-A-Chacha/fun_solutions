@@ -30,7 +30,7 @@ const jsonLd = {
   creator: {
     '@type': 'Organization',
     name: 'Chacha Technologies',
-    url: 'https://www.chach-a.com',
+    url: 'https://chacha.ke',
   },
 };
 
