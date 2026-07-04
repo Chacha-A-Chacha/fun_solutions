@@ -11,6 +11,7 @@ import {
   Users,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
   Filter,
   Plus,
   RefreshCcw,
@@ -84,7 +85,6 @@ export default function InstructorDashboard() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [expandedSessions, setExpandedSessions] = useState({});
   const [selectedDay, setSelectedDay] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [addParticipantSession, setAddParticipantSession] = useState(null);
@@ -92,6 +92,7 @@ export default function InstructorDashboard() {
   const [activeTab, setActiveTab] = useState('sessions');
   const [userRole, setUserRole] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
 
   const isAdmin = userRole === 'ADMIN';
 
@@ -121,6 +122,15 @@ export default function InstructorDashboard() {
       .catch(() => setUserRole(null));
   }, []);
 
+  // Roster opens as a bottom sheet on phones (field-friendly), side drawer on desktop
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
   // (Re)fetch sessions on mount and whenever the class filter changes
   useEffect(() => {
     fetchData();
@@ -148,14 +158,6 @@ export default function InstructorDashboard() {
   // Handle day selection
   const handleDaySelect = (day) => {
     setSelectedDay(day === selectedDay ? null : day);
-  };
-
-  // Toggle session expansion
-  const toggleSessionExpansion = (sessionId) => {
-    setExpandedSessions(prev => ({
-      ...prev,
-      [sessionId]: !prev[sessionId]
-    }));
   };
 
   // Handle staff logout
@@ -269,7 +271,7 @@ export default function InstructorDashboard() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <header className="bg-blue-900 shadow-lg sticky top-0 z-10">
+      <header className="bg-blue-900 shadow-lg sticky top-0 z-10 pt-[env(safe-area-inset-top)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col md:flex-row md:justify-between md:items-center space-y-4 md:space-y-0">
             <div>
@@ -611,72 +613,28 @@ export default function InstructorDashboard() {
                       ) : (
                         <div className="divide-y divide-gray-100">
                           {filteredSessions.map((session) => (
-                            <div
+                            <button
                               key={session.id}
-                              className="p-4 hover:bg-gray-50 transition-colors"
+                              type="button"
+                              onClick={() => setRosterSessionId(session.id)}
+                              className="w-full text-left p-4 min-h-[56px] hover:bg-gray-50 active:bg-gray-100 transition-colors flex justify-between items-center gap-3"
                             >
-                              <div className="flex justify-between items-center">
-                                <div>
-                                  <div className="font-semibold text-gray-900 flex items-center gap-2">
-                                    {session.dayName} - {session.timeSlotName}
-                                    {session.category && (
-                                      <Badge variant="outline" className="text-blue-700 border-blue-200 bg-blue-50">
-                                        {session.category}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <div className="text-sm text-gray-600 flex items-center">
-                                    <Users className="w-3 h-3 mr-1" />
-                                    {session.enrolledCount}/{session.capacity} enrolled
-                                  </div>
+                              <div className="min-w-0">
+                                <div className="font-semibold text-gray-900 flex flex-wrap items-center gap-2">
+                                  <span className="truncate">{session.dayName} - {session.timeSlotName}</span>
+                                  {session.category && (
+                                    <Badge variant="outline" className="text-blue-700 border-blue-200 bg-blue-50">
+                                      {session.category}
+                                    </Badge>
+                                  )}
                                 </div>
-
-                                <div className="flex items-center space-x-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => toggleSessionExpansion(session.id)}
-                                    className="text-gray-400"
-                                  >
-                                    {expandedSessions[session.id] ? (
-                                      <ChevronUp className="w-4 h-4" />
-                                    ) : (
-                                      <ChevronDown className="w-4 h-4" />
-                                    )}
-                                  </Button>
+                                <div className="text-sm text-gray-600 flex items-center mt-0.5">
+                                  <Users className="w-3 h-3 mr-1" />
+                                  {session.enrolledCount}/{session.capacity} enrolled
                                 </div>
                               </div>
-
-                              {/* Expanded Session Details */}
-                              {expandedSessions[session.id] && (
-                                <div className="mt-4 space-y-2">
-                                  {session.students.length > 0 ? (
-                                    session.students.map((student) => (
-                                      <StudentRow
-                                        key={student.bookingId}
-                                        student={student}
-                                        onStatusUpdate={handleStatusUpdate}
-                                      />
-                                    ))
-                                  ) : (
-                                    <div className="text-sm text-gray-500 italic p-4 text-center">
-                                      No students enrolled
-                                    </div>
-                                  )}
-                                  {session.availableSpots > 0 && (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="w-full text-blue-700 border-blue-200 hover:bg-blue-50"
-                                      onClick={() => setAddParticipantSession(session)}
-                                    >
-                                      <UserPlus2 className="w-4 h-4 mr-1.5" />
-                                      Add student
-                                    </Button>
-                                  )}
-                                </div>
-                              )}
-                            </div>
+                              <ChevronRight className="w-5 h-5 text-gray-400 shrink-0" />
+                            </button>
                           ))}
                         </div>
                       )}
@@ -710,9 +668,12 @@ export default function InstructorDashboard() {
         />
       )}
 
-      {/* Roster Sheet — opened from the weekly timetable */}
+      {/* Roster Sheet — opened from the timetable (desktop) or the session list (mobile) */}
       <Sheet open={!!rosterSession} onOpenChange={(o) => { if (!o) setRosterSessionId(null); }}>
-        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+        <SheetContent
+          side={isMobile ? 'bottom' : 'right'}
+          className={isMobile ? 'h-[85vh] rounded-t-2xl overflow-y-auto' : 'w-full sm:max-w-md overflow-y-auto'}
+        >
           {rosterSession && (
             <>
               <SheetHeader>
