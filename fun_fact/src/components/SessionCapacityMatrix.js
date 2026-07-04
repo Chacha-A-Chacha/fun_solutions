@@ -44,6 +44,7 @@ export default function SessionCapacityMatrix() {
   // edits keyed by session id → string value from the input
   const [edits, setEdits] = useState({});
   const [bulkValue, setBulkValue] = useState('');
+  const [mobileDay, setMobileDay] = useState(DAYS.MONDAY);
 
   const load = async () => {
     setLoading(true);
@@ -176,6 +177,62 @@ export default function SessionCapacityMatrix() {
     </div>
   );
 
+  // Mobile: one day at a time as a vertical list (no horizontal scrolling)
+  const renderMobile = () => {
+    const slots = DAY_TIME_SLOTS[mobileDay];
+    return (
+      <div className="space-y-3">
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+          {Object.values(DAYS).map((d) => (
+            <button
+              key={d}
+              type="button"
+              onClick={() => setMobileDay(d)}
+              className={`shrink-0 rounded-md px-3 py-1.5 text-sm border transition-colors ${
+                mobileDay === d ? 'bg-blue-900 text-white border-blue-900' : 'bg-white text-gray-600 border-gray-200'
+              }`}
+            >
+              {DAY_NAMES[d].slice(0, 3)}
+            </button>
+          ))}
+        </div>
+        <div className="divide-y divide-gray-100 rounded-lg border border-gray-200">
+          {slots.map((slot) => {
+            const row = bySlot[`${mobileDay}_${slot}`];
+            const val = cellValue(row);
+            const over = row && Number(val) < row.enrolledCount;
+            const open = Number(val || 0) > 0;
+            return (
+              <div key={slot} className="flex items-center justify-between gap-3 p-3">
+                <div className="min-w-0">
+                  <div className="text-sm text-gray-800">{TIME_SLOT_NAMES[slot]}</div>
+                  {row?.enrolledCount > 0 && (
+                    <div className="text-[11px] text-gray-400">{row.enrolledCount} booked</div>
+                  )}
+                </div>
+                <Input
+                  type="number"
+                  min={0}
+                  inputMode="numeric"
+                  value={val}
+                  disabled={!row || saving}
+                  onChange={(e) => row && setCell(row.id, e.target.value)}
+                  className={`h-10 w-20 text-center shrink-0 ${
+                    over
+                      ? 'border-red-400 text-red-600 font-medium'
+                      : open
+                        ? 'border-blue-300 bg-blue-50 text-blue-900 font-medium'
+                        : 'text-gray-400'
+                  }`}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Card className="border-gray-200 shadow-sm">
       <CardContent className="p-5 space-y-5">
@@ -225,10 +282,13 @@ export default function SessionCapacityMatrix() {
             <Skeleton className="h-20 w-full" />
           </div>
         ) : (
-          <div className="space-y-5">
-            {renderGrid(WEEKDAYS, WEEKDAY_SLOTS, 'Weekdays (Mon–Fri)')}
-            {renderGrid(WEEKEND, WEEKEND_SLOTS, 'Weekend (Sat–Sun)')}
-          </div>
+          <>
+            <div className="hidden sm:block space-y-5">
+              {renderGrid(WEEKDAYS, WEEKDAY_SLOTS, 'Weekdays (Mon–Fri)')}
+              {renderGrid(WEEKEND, WEEKEND_SLOTS, 'Weekend (Sat–Sun)')}
+            </div>
+            <div className="sm:hidden">{renderMobile()}</div>
+          </>
         )}
 
         <div className="flex items-center justify-between border-t pt-4">
