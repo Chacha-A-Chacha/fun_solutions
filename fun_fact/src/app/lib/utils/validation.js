@@ -115,7 +115,6 @@ export async function validateSessionBooking(studentId, sessionId) {
     }
 
     // Fetch dynamic settings
-    const maxCapacity = await getSetting('max_capacity_per_session', 4);
     const maxDaysPerWeek = await getSetting('max_days_per_week', 3);
     const maxSessionsPerDay = await getSetting('max_sessions_per_day', 1);
 
@@ -125,11 +124,12 @@ export async function validateSessionBooking(studentId, sessionId) {
       b => b.status !== 'CANCELLED' && b.weekOf.getTime() === weekOf.getTime()
     );
 
-    // Check if session is full
-    if (activeBookings.length >= maxCapacity) {
+    // Check if session is full. Capacity is per (day, timeSlot, licence class),
+    // stored on the session row — NOT the global default setting.
+    if (activeBookings.length >= session.capacity) {
       return {
         valid: false,
-        error: `This session is already at full capacity (${maxCapacity} students).`
+        error: `This session is already at full capacity (${session.capacity} students).`
       };
     }
 
