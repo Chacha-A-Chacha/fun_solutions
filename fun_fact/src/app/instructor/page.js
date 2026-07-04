@@ -785,13 +785,16 @@ const STATUS_LABELS = {
   CANCELLED: 'Cancelled',
 };
 
-// Student row with status badge and action buttons
+// Student row with status badge and action buttons.
+// On phones the action buttons drop below the student info and go full-width
+// (bigger tap targets); on desktop they sit inline on the right.
 function StudentRow({ student, onStatusUpdate }) {
+  const hasActions = student.status === 'BOOKED' || student.status === 'ATTENDED';
   return (
     <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-      <div className="flex justify-between items-start">
-        <div>
-          <div className="font-medium text-gray-900 flex items-center gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-start">
+        <div className="min-w-0">
+          <div className="font-medium text-gray-900 flex items-center gap-2 flex-wrap">
             {student.name}
             {student.status !== 'BOOKED' && (
               <Badge className={`text-xs ${STATUS_STYLES[student.status] || ''}`}>
@@ -800,7 +803,7 @@ function StudentRow({ student, onStatusUpdate }) {
             )}
           </div>
           <div className="text-xs text-gray-600 space-y-0.5 mt-1">
-            <div>{student.email}</div>
+            <div className="truncate">{student.email}</div>
             {student.phoneNumber && (
               <div>{student.phoneNumber}</div>
             )}
@@ -809,48 +812,50 @@ function StudentRow({ student, onStatusUpdate }) {
             )}
           </div>
         </div>
-        <div className="flex gap-1 flex-shrink-0 ml-2">
-          {student.status === 'BOOKED' && (
-            <>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-xs h-7 border-green-300 text-green-700 hover:bg-green-50"
-                onClick={() => onStatusUpdate(student.bookingId, 'ATTENDED')}
-              >
-                Attended
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-xs h-7 border-red-300 text-red-700 hover:bg-red-50"
-                onClick={() => onStatusUpdate(student.bookingId, 'NO_SHOW')}
-              >
-                No-Show
-              </Button>
-            </>
-          )}
-          {student.status === 'ATTENDED' && (
-            <>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-xs h-7 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
-                onClick={() => onStatusUpdate(student.bookingId, 'COMPLETED')}
-              >
-                Completed
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-xs h-7 border-yellow-300 text-yellow-700 hover:bg-yellow-50"
-                onClick={() => onStatusUpdate(student.bookingId, 'INCOMPLETE')}
-              >
-                Incomplete
-              </Button>
-            </>
-          )}
-        </div>
+        {hasActions && (
+          <div className="flex gap-2 sm:flex-shrink-0">
+            {student.status === 'BOOKED' && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 sm:flex-none h-9 text-xs border-green-300 text-green-700 hover:bg-green-50"
+                  onClick={() => onStatusUpdate(student.bookingId, 'ATTENDED')}
+                >
+                  Attended
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 sm:flex-none h-9 text-xs border-red-300 text-red-700 hover:bg-red-50"
+                  onClick={() => onStatusUpdate(student.bookingId, 'NO_SHOW')}
+                >
+                  No-Show
+                </Button>
+              </>
+            )}
+            {student.status === 'ATTENDED' && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 sm:flex-none h-9 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                  onClick={() => onStatusUpdate(student.bookingId, 'COMPLETED')}
+                >
+                  Completed
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 sm:flex-none h-9 text-xs border-yellow-300 text-yellow-700 hover:bg-yellow-50"
+                  onClick={() => onStatusUpdate(student.bookingId, 'INCOMPLETE')}
+                >
+                  Incomplete
+                </Button>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
