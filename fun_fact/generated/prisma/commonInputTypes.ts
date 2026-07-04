@@ -44,6 +44,13 @@ export type StringNullableFilter<$PrismaModel = never> = {
   not?: Prisma.NestedStringNullableFilter<$PrismaModel> | string | null
 }
 
+export type EnumLicenceClassFilter<$PrismaModel = never> = {
+  equals?: $Enums.LicenceClass | Prisma.EnumLicenceClassFieldRefInput<$PrismaModel>
+  in?: $Enums.LicenceClass[]
+  notIn?: $Enums.LicenceClass[]
+  not?: Prisma.NestedEnumLicenceClassFilter<$PrismaModel> | $Enums.LicenceClass
+}
+
 export type EnumStudentStatusFilter<$PrismaModel = never> = {
   equals?: $Enums.StudentStatus | Prisma.EnumStudentStatusFieldRefInput<$PrismaModel>
   in?: $Enums.StudentStatus[]
@@ -112,6 +119,16 @@ export type StringNullableWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
   _min?: Prisma.NestedStringNullableFilter<$PrismaModel>
   _max?: Prisma.NestedStringNullableFilter<$PrismaModel>
+}
+
+export type EnumLicenceClassWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.LicenceClass | Prisma.EnumLicenceClassFieldRefInput<$PrismaModel>
+  in?: $Enums.LicenceClass[]
+  notIn?: $Enums.LicenceClass[]
+  not?: Prisma.NestedEnumLicenceClassWithAggregatesFilter<$PrismaModel> | $Enums.LicenceClass
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumLicenceClassFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumLicenceClassFilter<$PrismaModel>
 }
 
 export type EnumStudentStatusWithAggregatesFilter<$PrismaModel = never> = {
@@ -345,6 +362,13 @@ export type NestedStringNullableFilter<$PrismaModel = never> = {
   not?: Prisma.NestedStringNullableFilter<$PrismaModel> | string | null
 }
 
+export type NestedEnumLicenceClassFilter<$PrismaModel = never> = {
+  equals?: $Enums.LicenceClass | Prisma.EnumLicenceClassFieldRefInput<$PrismaModel>
+  in?: $Enums.LicenceClass[]
+  notIn?: $Enums.LicenceClass[]
+  not?: Prisma.NestedEnumLicenceClassFilter<$PrismaModel> | $Enums.LicenceClass
+}
+
 export type NestedEnumStudentStatusFilter<$PrismaModel = never> = {
   equals?: $Enums.StudentStatus | Prisma.EnumStudentStatusFieldRefInput<$PrismaModel>
   in?: $Enums.StudentStatus[]
@@ -430,6 +454,16 @@ export type NestedIntNullableFilter<$PrismaModel = never> = {
   gt?: number | Prisma.IntFieldRefInput<$PrismaModel>
   gte?: number | Prisma.IntFieldRefInput<$PrismaModel>
   not?: Prisma.NestedIntNullableFilter<$PrismaModel> | number | null
+}
+
+export type NestedEnumLicenceClassWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.LicenceClass | Prisma.EnumLicenceClassFieldRefInput<$PrismaModel>
+  in?: $Enums.LicenceClass[]
+  notIn?: $Enums.LicenceClass[]
+  not?: Prisma.NestedEnumLicenceClassWithAggregatesFilter<$PrismaModel> | $Enums.LicenceClass
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumLicenceClassFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumLicenceClassFilter<$PrismaModel>
 }
 
 export type NestedEnumStudentStatusWithAggregatesFilter<$PrismaModel = never> = {

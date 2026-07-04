@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 
 // Import constants (CommonJS module)
 const require = createRequire(import.meta.url);
-const { DAYS, TIME_SLOTS, DAY_TIME_SLOTS } = require('../src/app/lib/constants');
+const { DAYS, TIME_SLOTS, DAY_TIME_SLOTS, LICENCE_CLASSES, DEFAULT_LICENCE_CLASS } = require('../src/app/lib/constants');
 
 const adapter = new PrismaMariaDb({
   host: process.env.DATABASE_HOST,
@@ -20,6 +20,8 @@ const adapter = new PrismaMariaDb({
   password: process.env.DATABASE_PASSWORD,
   database: process.env.DATABASE_NAME,
   port: parseInt(process.env.DATABASE_PORT || '3306'),
+  // See prisma-client.js — required for local MySQL 8 caching_sha2_password auth.
+  allowPublicKeyRetrieval: true,
 });
 
 const prisma = new PrismaClient({ adapter });
@@ -88,30 +90,33 @@ async function main() {
     if (capacitySetting) defaultCapacity = parseInt(capacitySetting.value, 10);
   } catch (_) { /* settings table may not exist yet */ }
 
+  // Create the full (day × timeSlot × licence class) matrix. The default class
+  // is opened at `defaultCapacity`; every other class starts at 0 (not offered)
+  // so an admin can open it later via the capacity matrix. Upsert on the
+  // composite unique key keeps this idempotent and never overwrites capacities
+  // an admin has already set.
   for (const day of Object.values(DAYS)) {
     const timeSlots = DAY_TIME_SLOTS[day];
 
     for (const timeSlot of timeSlots) {
-      try {
-        let shouldCreate = true;
-        if (tablesExist) {
-          const existingSession = await prisma.session.findFirst({
-            where: { day, timeSlot }
-          });
-          shouldCreate = !existingSession;
-        }
+      for (const category of LICENCE_CLASSES) {
+        const capacity = category === DEFAULT_LICENCE_CLASS ? defaultCapacity : 0;
+        try {
+          const existing = tablesExist
+            ? await prisma.session.findUnique({
+                where: { day_timeSlot_category: { day, timeSlot, category } }
+              })
+            : null;
 
-        if (shouldCreate) {
-          await prisma.session.create({
-            data: { day, timeSlot, capacity: defaultCapacity }
-          });
-          console.log(`Created new session for ${day} at time slot ${timeSlot} (capacity: ${defaultCapacity})`);
-          createdSessions++;
-        } else {
-          console.log(`Session for ${day} at time slot ${timeSlot} already exists, skipping`);
+          if (!existing) {
+            await prisma.session.create({
+              data: { day, timeSlot, category, capacity }
+            });
+            createdSessions++;
+          }
+        } catch (error) {
+          console.error(`Error processing session for ${day} ${timeSlot} ${category}:`, error);
         }
-      } catch (error) {
-        console.error(`Error processing session for ${day} at ${timeSlot}:`, error);
       }
     }
   }

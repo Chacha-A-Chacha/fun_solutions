@@ -14,10 +14,9 @@ import {
   Filter,
   Plus,
   RefreshCcw,
-  ToggleLeft,
-  ToggleRight,
   Info,
   UserPlus,
+  UserPlus2,
   GraduationCap,
   BarChart3,
   Clock,
@@ -28,6 +27,8 @@ import {
   UserX,
   Zap,
   SlidersHorizontal,
+  Loader2,
+  CheckCircle2,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -39,7 +40,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { DAY_NAMES, TIME_SLOT_NAMES } from '@/app/lib/constants';
+import { DAY_NAMES, TIME_SLOT_NAMES, LICENCE_CLASSES, LICENCE_CLASS_NAMES } from '@/app/lib/constants';
 
 // Shadcn components
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -54,24 +55,27 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 // Custom components
 import CreateStudentForm from '@/components/CreateStudentForm';
 import AddInstructorForm from '@/components/AddInstructorForm';
-import SessionToggleDialog from '@/components/SessionToggleDialog';
+import AddParticipantModal from '@/components/AddParticipantModal';
+import SessionTimetable from '@/components/SessionTimetable';
 import StudentsList from '@/components/StudentsList';
 import ExportDataSheet from '@/components/ExportDataSheet';
+import SessionCapacityMatrix from '@/components/SessionCapacityMatrix';
 import PoweredByFooter from '@/components/PoweredByFooter';
 
 export default function InstructorDashboard() {
@@ -83,18 +87,20 @@ export default function InstructorDashboard() {
   const [expandedSessions, setExpandedSessions] = useState({});
   const [selectedDay, setSelectedDay] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [showDisableSessionDialog, setShowDisableSessionDialog] = useState(false);
-  const [sessionToToggle, setSessionToToggle] = useState(null);
+  const [addParticipantSession, setAddParticipantSession] = useState(null);
+  const [rosterSessionId, setRosterSessionId] = useState(null);
   const [activeTab, setActiveTab] = useState('sessions');
   const [userRole, setUserRole] = useState(null);
+  const [categoryFilter, setCategoryFilter] = useState('');
 
   const isAdmin = userRole === 'ADMIN';
 
-  // Fetch session data
+  // Fetch session data (optionally scoped to a licence class)
   const fetchData = async () => {
     try {
       setRefreshing(true);
-      const { data } = await axios.get('/api/instructor/sessions');
+      const params = categoryFilter ? `?category=${categoryFilter}` : '';
+      const { data } = await axios.get(`/api/instructor/sessions${params}`);
       setSessions(data.sessions);
       setAnalytics(data.analytics);
       setError(null);
@@ -108,20 +114,25 @@ export default function InstructorDashboard() {
     }
   };
 
-  // Fetch user role and session data on initial load
+  // Fetch user role once on mount
   useEffect(() => {
     axios.get('/api/auth/staff')
       .then(({ data }) => setUserRole(data.user?.role || null))
       .catch(() => setUserRole(null));
-    fetchData();
   }, []);
+
+  // (Re)fetch sessions on mount and whenever the class filter changes
+  useEffect(() => {
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryFilter]);
 
   // Filter sessions by selected day
   const filteredSessions = selectedDay
     ? sessions.filter(session => session.day === selectedDay)
     : sessions;
 
-  // Group sessions by day for the tabs view
+  // Group sessions by day for the mobile list view
   const sessionsByDay = sessions.reduce((acc, session) => {
     if (!acc[session.day]) {
       acc[session.day] = [];
@@ -129,6 +140,10 @@ export default function InstructorDashboard() {
     acc[session.day].push(session);
     return acc;
   }, {});
+
+  // Live session backing the roster Sheet (re-derived so it reflects refreshes)
+  const rosterSession = sessions.find((s) => s.id === rosterSessionId) || null;
+  const rosterBooked = rosterSession ? rosterSession.students.filter((s) => s.status === 'BOOKED').length : 0;
 
   // Handle day selection
   const handleDaySelect = (day) => {
@@ -141,37 +156,6 @@ export default function InstructorDashboard() {
       ...prev,
       [sessionId]: !prev[sessionId]
     }));
-  };
-
-  // Handle session toggle (enable/disable)
-  const handleSessionToggle = (session) => {
-    setSessionToToggle(session);
-    setShowDisableSessionDialog(true);
-  };
-
-  // Handle session status change
-  const handleSessionStatusChange = async (sessionId, isEnabled) => {
-    try {
-      await axios.patch(`/api/instructor/sessions/${sessionId}`, {
-        isEnabled
-      });
-
-      // Update local state
-      setSessions(prevSessions =>
-        prevSessions.map(session =>
-          session.id === sessionId
-            ? { ...session, isEnabled }
-            : session
-        )
-      );
-
-      toast.success(`Session ${isEnabled ? 'enabled' : 'disabled'} successfully`);
-    } catch (error) {
-      console.error('Error updating session status:', error);
-      toast.error('Failed to update session status');
-    }
-
-    setShowDisableSessionDialog(false);
   };
 
   // Handle staff logout
@@ -195,6 +179,24 @@ export default function InstructorDashboard() {
     } catch (err) {
       const msg = err.response?.data?.error || 'Failed to update status';
       toast.error(msg);
+    }
+  };
+
+  // Bulk: mark every still-BOOKED student in a session as ATTENDED, then refresh once
+  const handleBulkAttend = async (session) => {
+    const booked = (session.students || []).filter((s) => s.status === 'BOOKED');
+    if (booked.length === 0) return;
+    try {
+      const results = await Promise.allSettled(
+        booked.map((s) => axios.patch(`/api/instructor/bookings/${s.bookingId}`, { status: 'ATTENDED' }))
+      );
+      const ok = results.filter((r) => r.status === 'fulfilled').length;
+      const failed = results.length - ok;
+      toast.success(`Marked ${ok} attended${failed ? `, ${failed} failed` : ''}`);
+    } catch {
+      toast.error('Some updates failed');
+    } finally {
+      fetchData();
     }
   };
 
@@ -385,6 +387,41 @@ export default function InstructorDashboard() {
 
               {/* Sessions Tab Content */}
               <TabsContent value="sessions" className="p-6 space-y-6">
+                {/* Licence class filter — staff can view any class's sessions */}
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Filter className="w-4 h-4 text-blue-600" />
+                    <span className="font-medium">Licence class</span>
+                  </div>
+                  <Select
+                    value={categoryFilter || 'all'}
+                    onValueChange={(v) => setCategoryFilter(v === 'all' ? '' : v)}
+                  >
+                    <SelectTrigger className="w-full sm:w-64">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All classes</SelectItem>
+                      {LICENCE_CLASSES.map((c) => (
+                        <SelectItem key={c} value={c}>{LICENCE_CLASS_NAMES[c]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* No open slots for the selected class */}
+                {categoryFilter && !refreshing && sessions.length === 0 && (
+                  <div className="flex items-start gap-2 text-sm bg-amber-50 border border-amber-200 rounded-lg p-3 text-amber-800">
+                    <Info className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>
+                      No slots are open for class {categoryFilter}. Open some in{' '}
+                      <button className="underline font-medium" onClick={() => setActiveTab('settings')}>
+                        Settings → Session capacity
+                      </button>{isAdmin ? '.' : ' (admin only).'}
+                    </span>
+                  </div>
+                )}
+
                 {/* Analytics Summary */}
                 {analytics && (
                   <div className="space-y-4">
@@ -494,49 +531,26 @@ export default function InstructorDashboard() {
                   </div>
                 )}
 
-                {/* Day Selector & Sessions View - matching SessionCalendar day selector */}
+                {/* Weekly timetable — click a class chip to open its roster */}
                 <Card className="hidden md:block">
                   <CardHeader>
-                    <CardTitle>Sessions by Day</CardTitle>
+                    <CardTitle>Weekly Schedule</CardTitle>
                     <CardDescription>
-                      View and manage sessions for each day
+                      Every offered class slot this week. Click a class to view its roster and mark attendance.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Tabs defaultValue={Object.keys(sessionsByDay)[0] || "none"}>
-                      <TabsList className="w-full h-11 bg-transparent border border-slate-200 p-1 rounded-lg mb-4">
-                        {Object.entries(DAY_NAMES).map(([day, dayName]) => (
-                          <TabsTrigger key={day} value={day} className="flex-1 h-full text-slate-500 data-[state=active]:bg-blue-900 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-md transition-all">
-                            {dayName}
-                          </TabsTrigger>
-                        ))}
-                      </TabsList>
-
-                      {Object.entries(DAY_NAMES).map(([day]) => (
-                        <TabsContent key={day} value={day} className="space-y-4">
-                          {sessionsByDay[day]?.length > 0 ? (
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                              {sessionsByDay[day].map(session => (
-                                <SessionCard
-                                  key={session.id}
-                                  session={session}
-                                  isExpanded={expandedSessions[session.id]}
-                                  toggleExpansion={() => toggleSessionExpansion(session.id)}
-                                  onToggleStatus={() => handleSessionToggle(session)}
-                                  onStatusUpdate={handleStatusUpdate}
-                                  isAdmin={isAdmin}
-                                />
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-center py-10 text-gray-500">
-                              <Calendar className="mx-auto h-10 w-10 text-gray-300 mb-2" />
-                              <p className="text-sm">No sessions on this day</p>
-                            </div>
-                          )}
-                        </TabsContent>
-                      ))}
-                    </Tabs>
+                    {sessions.length > 0 ? (
+                      <SessionTimetable
+                        sessions={sessions}
+                        onOpenSession={(s) => setRosterSessionId(s.id)}
+                      />
+                    ) : (
+                      <div className="text-center py-10 text-gray-500">
+                        <Calendar className="mx-auto h-10 w-10 text-gray-300 mb-2" />
+                        <p className="text-sm">No offered sessions{categoryFilter ? ` for class ${categoryFilter}` : ''}.</p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -603,11 +617,11 @@ export default function InstructorDashboard() {
                             >
                               <div className="flex justify-between items-center">
                                 <div>
-                                  <div className="font-semibold text-gray-900 flex items-center">
+                                  <div className="font-semibold text-gray-900 flex items-center gap-2">
                                     {session.dayName} - {session.timeSlotName}
-                                    {session.isEnabled === false && (
-                                      <Badge variant="outline" className="ml-2 text-red-600 border-red-200 bg-red-50">
-                                        Disabled
+                                    {session.category && (
+                                      <Badge variant="outline" className="text-blue-700 border-blue-200 bg-blue-50">
+                                        {session.category}
                                       </Badge>
                                     )}
                                   </div>
@@ -618,20 +632,6 @@ export default function InstructorDashboard() {
                                 </div>
 
                                 <div className="flex items-center space-x-1">
-                                  {isAdmin && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => handleSessionToggle(session)}
-                                    >
-                                      {session.isEnabled !== false ? (
-                                        <ToggleRight className="w-4 h-4 text-green-600" />
-                                      ) : (
-                                        <ToggleLeft className="w-4 h-4 text-gray-400" />
-                                      )}
-                                    </Button>
-                                  )}
-
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -663,6 +663,17 @@ export default function InstructorDashboard() {
                                       No students enrolled
                                     </div>
                                   )}
+                                  {session.availableSpots > 0 && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="w-full text-blue-700 border-blue-200 hover:bg-blue-50"
+                                      onClick={() => setAddParticipantSession(session)}
+                                    >
+                                      <UserPlus2 className="w-4 h-4 mr-1.5" />
+                                      Add student
+                                    </Button>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -690,15 +701,74 @@ export default function InstructorDashboard() {
         </Card>
       </main>
 
-      {/* Session Toggle Dialog */}
-      {showDisableSessionDialog && sessionToToggle && (
-        <SessionToggleDialog
-          session={sessionToToggle}
-          open={showDisableSessionDialog}
-          onOpenChange={setShowDisableSessionDialog}
-          onConfirm={handleSessionStatusChange}
+      {/* Add Participant modal (class-aware) */}
+      {addParticipantSession && (
+        <AddParticipantModal
+          session={addParticipantSession}
+          onClose={() => setAddParticipantSession(null)}
+          onParticipantAdded={fetchData}
         />
       )}
+
+      {/* Roster Sheet — opened from the weekly timetable */}
+      <Sheet open={!!rosterSession} onOpenChange={(o) => { if (!o) setRosterSessionId(null); }}>
+        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+          {rosterSession && (
+            <>
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2">
+                  {rosterSession.dayName} · {rosterSession.timeSlotName}
+                  <Badge variant="outline" className="text-blue-700 border-blue-200 bg-blue-50">
+                    {rosterSession.category}
+                  </Badge>
+                </SheetTitle>
+                <SheetDescription>
+                  {rosterSession.enrolledCount}/{rosterSession.capacity} enrolled · {rosterSession.fillPercentage}% full
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="px-4 pb-6 space-y-3">
+                {rosterBooked > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-green-700 border-green-200 hover:bg-green-50"
+                    onClick={() => handleBulkAttend(rosterSession)}
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-1.5" />
+                    Mark all {rosterBooked} attended
+                  </Button>
+                )}
+
+                {rosterSession.students.length > 0 ? (
+                  <div className="space-y-2">
+                    {rosterSession.students.map((student) => (
+                      <StudentRow key={student.bookingId} student={student} onStatusUpdate={handleStatusUpdate} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
+                    <Users className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                    <div className="text-sm text-gray-500">No students enrolled</div>
+                  </div>
+                )}
+
+                {rosterSession.availableSpots > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-blue-700 border-blue-200 hover:bg-blue-50"
+                    onClick={() => setAddParticipantSession(rosterSession)}
+                  >
+                    <UserPlus2 className="w-4 h-4 mr-1.5" />
+                    Add student to this session
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
 
       <PoweredByFooter variant="light" />
     </div>
@@ -801,7 +871,7 @@ function StudentRow({ student, onStatusUpdate }) {
 const SETTING_META = {
   max_capacity_per_session: {
     icon: Users,
-    description: 'Maximum students that can book the same session.',
+    description: 'Default capacity applied when opening a new class slot. Per-slot capacity is set in the matrix below.',
     unit: 'students',
   },
   max_days_per_week: {
@@ -840,7 +910,9 @@ const SETTING_META = {
 function SettingsPanel() {
   const [settings, setSettings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState({});
+  const [numericEdits, setNumericEdits] = useState({});
+  const [savingAll, setSavingAll] = useState(false);
+  const [savingKey, setSavingKey] = useState({});
   const [archiving, setArchiving] = useState(false);
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
 
@@ -851,15 +923,43 @@ function SettingsPanel() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleSave = async (key, value) => {
-    setSaving(prev => ({ ...prev, [key]: true }));
+  const numericSettings = settings.filter((s) => s.type !== 'boolean');
+  const toggleSettings = settings.filter((s) => s.type === 'boolean');
+
+  const setNumeric = (key, val) => setNumericEdits((p) => ({ ...p, [key]: val }));
+  const numericValue = (s) => (numericEdits[s.key] !== undefined ? numericEdits[s.key] : s.value);
+  const changedNumeric = numericSettings.filter(
+    (s) => numericEdits[s.key] !== undefined && numericEdits[s.key] !== '' && numericEdits[s.key] !== s.value
+  );
+
+  // Booking rules save as a single batch
+  const handleSaveAll = async () => {
+    if (changedNumeric.length === 0) return;
+    setSavingAll(true);
+    const payload = Object.fromEntries(changedNumeric.map((s) => [s.key, numericEdits[s.key]]));
+    try {
+      await axios.patch('/api/admin/settings', payload);
+      setSettings((prev) => prev.map((s) => (payload[s.key] !== undefined ? { ...s, value: String(payload[s.key]) } : s)));
+      setNumericEdits({});
+      toast.success(`Saved ${changedNumeric.length} change${changedNumeric.length !== 1 ? 's' : ''}`);
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to save settings');
+    } finally {
+      setSavingAll(false);
+    }
+  };
+
+  // Boolean/automation settings auto-save on change
+  const handleToggleSave = async (key, value) => {
+    setSavingKey((p) => ({ ...p, [key]: true }));
     try {
       await axios.patch('/api/admin/settings', { [key]: value });
+      setSettings((prev) => prev.map((s) => (s.key === key ? { ...s, value } : s)));
       toast.success('Setting updated');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to update setting');
     } finally {
-      setSaving(prev => ({ ...prev, [key]: false }));
+      setSavingKey((p) => ({ ...p, [key]: false }));
     }
   };
 
@@ -879,130 +979,149 @@ function SettingsPanel() {
   if (loading) {
     return (
       <div className="space-y-4">
-        {[1, 2, 3, 4].map(i => (
+        {[1, 2, 3, 4].map((i) => (
           <Skeleton key={i} className="h-24 w-full" />
         ))}
       </div>
     );
   }
 
-  const numericSettings = settings.filter((s) => s.type !== 'boolean');
-  const toggleSettings = settings.filter((s) => s.type === 'boolean');
+  const subTab = (value, Icon, label) => (
+    <TabsTrigger
+      value={value}
+      className="flex-1 h-full px-4 text-slate-500 data-[state=active]:bg-blue-900 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-md transition-all"
+    >
+      <Icon className="w-4 h-4 mr-1.5" />
+      <span className="hidden sm:inline">{label}</span>
+    </TabsTrigger>
+  );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-gray-900 flex items-center mb-1">
           <Settings className="mr-2 w-5 h-5 text-blue-600" />
           System Settings
         </h3>
         <p className="text-sm text-gray-500">
-          Configure how booking and student management behaves. Changes take effect immediately.
+          Configure how booking and student management behaves.
         </p>
       </div>
 
-      {/* Booking rules */}
-      {numericSettings.length > 0 && (
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <SlidersHorizontal className="w-4 h-4 text-gray-400" />
-            <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Booking rules</h4>
-          </div>
+      <Tabs defaultValue="capacity" className="w-full">
+        <TabsList className="w-full h-11 bg-transparent border border-slate-200 p-1 rounded-lg">
+          {subTab('capacity', SlidersHorizontal, 'Schedule & capacity')}
+          {subTab('rules', BarChart3, 'Booking rules')}
+          {subTab('automation', Zap, 'Automation')}
+          {subTab('maintenance', RefreshCcw, 'Maintenance')}
+        </TabsList>
+
+        {/* Primary: per-class capacity is how offerings are controlled */}
+        <TabsContent value="capacity" className="pt-4">
+          <SessionCapacityMatrix />
+        </TabsContent>
+
+        {/* Booking rules — batch save */}
+        <TabsContent value="rules" className="pt-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {numericSettings.map((setting) => (
               <SettingCard
                 key={setting.key}
                 setting={setting}
-                saving={saving[setting.key]}
-                onSave={handleSave}
+                value={numericValue(setting)}
+                onChange={setNumeric}
               />
             ))}
           </div>
-        </section>
-      )}
-
-      {/* Automation */}
-      {toggleSettings.length > 0 && (
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-gray-400" />
-            <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Automation</h4>
+          <div className="flex items-center justify-end gap-3 border-t pt-4">
+            {changedNumeric.length > 0 && (
+              <Badge variant="outline" className="text-blue-700 border-blue-200 bg-blue-50">
+                {changedNumeric.length} unsaved
+              </Badge>
+            )}
+            <Button
+              onClick={handleSaveAll}
+              disabled={savingAll || changedNumeric.length === 0}
+              className="bg-blue-900 hover:bg-blue-800"
+            >
+              {savingAll
+                ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Saving…</>
+                : <><Save className="w-4 h-4 mr-1.5" /> Save changes</>}
+            </Button>
           </div>
+        </TabsContent>
+
+        {/* Automation — auto-save toggles */}
+        <TabsContent value="automation" className="pt-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {toggleSettings.map((setting) => (
               <SettingCard
                 key={setting.key}
                 setting={setting}
-                saving={saving[setting.key]}
-                onSave={handleSave}
+                saving={savingKey[setting.key]}
+                onSave={handleToggleSave}
               />
             ))}
           </div>
-        </section>
-      )}
+        </TabsContent>
 
-      <div className="border-t pt-6">
-        <h3 className="text-lg font-medium text-gray-900 flex items-center mb-1">
-          <RefreshCcw className="mr-2 w-5 h-5 text-blue-600" />
-          Weekly Archive
-        </h3>
-        <p className="text-sm text-gray-500 mb-4">
-          Archive stale bookings from past weeks. Runs automatically every Sunday — use this to trigger manually if needed.
-        </p>
-        <Button
-          variant="outline"
-          disabled={archiving}
-          onClick={() => setShowArchiveConfirm(true)}
-          className="border-blue-200 text-blue-700 hover:bg-blue-50"
-        >
-          {archiving ? (
-            <>
-              <RefreshCcw className="mr-2 w-4 h-4 animate-spin" />
-              Archiving...
-            </>
-          ) : (
-            <>
-              <RefreshCcw className="mr-2 w-4 h-4" />
-              Run Archive Now
-            </>
-          )}
-        </Button>
+        {/* Maintenance — weekly archive */}
+        <TabsContent value="maintenance" className="pt-4">
+          <div className="rounded-lg border border-gray-200 p-5">
+            <h3 className="text-base font-medium text-gray-900 flex items-center mb-1">
+              <RefreshCcw className="mr-2 w-5 h-5 text-blue-600" />
+              Weekly Archive
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Archive stale bookings from past weeks. Runs automatically every Sunday — use this to trigger manually if needed.
+            </p>
+            <Button
+              variant="outline"
+              disabled={archiving}
+              onClick={() => setShowArchiveConfirm(true)}
+              className="border-blue-200 text-blue-700 hover:bg-blue-50"
+            >
+              {archiving ? (
+                <><Loader2 className="mr-2 w-4 h-4 animate-spin" /> Archiving...</>
+              ) : (
+                <><RefreshCcw className="mr-2 w-4 h-4" /> Run Archive Now</>
+              )}
+            </Button>
+          </div>
 
-        <AlertDialog open={showArchiveConfirm} onOpenChange={setShowArchiveConfirm}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center">
-                <AlertTriangle className="mr-2 h-5 w-5 text-amber-500" />
-                Archive Stale Bookings
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                This will permanently update the status of all unresolved bookings from past weeks. This action cannot be undone.
-              </AlertDialogDescription>
-              <div className="space-y-3 text-sm">
-                <div className="bg-amber-50 p-3 rounded-md border border-amber-200 space-y-1">
-                  <div className="text-amber-800 font-medium">The following changes will be made:</div>
-                  <ul className="list-disc list-inside text-amber-700 mt-1">
-                    <li>BOOKED (not attended) will be set to CANCELLED</li>
-                    <li>ATTENDED (not finalized) will be set to INCOMPLETE</li>
-                  </ul>
+          <AlertDialog open={showArchiveConfirm} onOpenChange={setShowArchiveConfirm}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center">
+                  <AlertTriangle className="mr-2 h-5 w-5 text-amber-500" />
+                  Archive Stale Bookings
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently update the status of all unresolved bookings from past weeks. This action cannot be undone.
+                </AlertDialogDescription>
+                <div className="space-y-3 text-sm">
+                  <div className="bg-amber-50 p-3 rounded-md border border-amber-200 space-y-1">
+                    <div className="text-amber-800 font-medium">The following changes will be made:</div>
+                    <ul className="list-disc list-inside text-amber-700 mt-1">
+                      <li>BOOKED (not attended) will be set to CANCELLED</li>
+                      <li>ATTENDED (not finalized) will be set to INCOMPLETE</li>
+                    </ul>
+                  </div>
+                  <div className="text-muted-foreground">
+                    Only bookings from previous weeks are affected — current week bookings will not be changed.
+                  </div>
                 </div>
-                <div className="text-muted-foreground">
-                  Only bookings from previous weeks are affected — current week bookings will not be changed.
-                </div>
-              </div>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleArchive}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                Archive Now
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleArchive} className="bg-red-600 hover:bg-red-700">
+                  Archive Now
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -1021,7 +1140,7 @@ function SettingCardHeader({ Icon, label, description, htmlFor, saving }) {
           <Label htmlFor={htmlFor} className="text-sm font-semibold text-gray-900">
             {label}
           </Label>
-          {saving && <RefreshCcw className="h-3.5 w-3.5 animate-spin text-gray-400" />}
+          {saving && <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />}
         </div>
         {description && <p className="text-xs text-gray-500 mt-0.5">{description}</p>}
       </div>
@@ -1029,31 +1148,31 @@ function SettingCardHeader({ Icon, label, description, htmlFor, saving }) {
   );
 }
 
-// Individual setting card
-function SettingCard({ setting, saving, onSave }) {
+// Individual setting card.
+// Boolean settings auto-save (onSave). Numeric settings are controlled by the
+// parent (value/onChange) and saved together via the batch "Save changes" bar.
+function SettingCard({ setting, value, onChange, saving, onSave }) {
   const meta = SETTING_META[setting.key] || {};
   const Icon = meta.icon;
-  const [value, setValue] = useState(setting.value);
-  const hasChanged = value !== setting.value;
 
   // Boolean settings render as a radio group with two described choices
   if (setting.type === 'boolean') {
+    const current = setting.value;
     const options = meta.options || [
       { value: 'true', title: 'Enabled', description: 'Turn this behavior on.' },
       { value: 'false', title: 'Disabled', description: 'Turn this behavior off.' },
     ];
     const handleChange = (next) => {
-      if (next === value) return;
-      setValue(next);
+      if (next === current) return;
       onSave(setting.key, next);
     };
     return (
       <Card className="border-gray-200 shadow-sm">
         <CardContent className="p-5 space-y-4">
           <SettingCardHeader Icon={Icon} label={setting.label} description={meta.description} saving={saving} />
-          <RadioGroup value={value} onValueChange={handleChange} disabled={saving} className="gap-2">
+          <RadioGroup value={current} onValueChange={handleChange} disabled={saving} className="gap-2">
             {options.map((opt) => {
-              const active = value === opt.value;
+              const active = current === opt.value;
               const id = `${setting.key}-${opt.value}`;
               return (
                 <label
@@ -1079,150 +1198,29 @@ function SettingCard({ setting, saving, onSave }) {
     );
   }
 
+  // Numeric setting — controlled, batch-saved by the parent
+  const changed = value !== setting.value;
   return (
     <Card className="border-gray-200 shadow-sm">
       <CardContent className="p-5 space-y-3">
-        <SettingCardHeader Icon={Icon} label={setting.label} description={meta.description} htmlFor={setting.key} saving={saving} />
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Input
-              id={setting.key}
-              type={setting.type === 'number' ? 'number' : 'text'}
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              className={meta.unit ? 'pr-20' : ''}
-              min={setting.type === 'number' ? 1 : undefined}
-            />
-            {meta.unit && (
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
-                {meta.unit}
-              </span>
-            )}
-          </div>
-          <Button
-            size="sm"
-            disabled={!hasChanged || saving}
-            onClick={() => onSave(setting.key, value)}
-            className="shrink-0 bg-blue-900 hover:bg-blue-800"
-          >
-            {saving ? (
-              <RefreshCcw className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-          </Button>
+        <SettingCardHeader Icon={Icon} label={setting.label} description={meta.description} htmlFor={setting.key} />
+        <div className="relative">
+          <Input
+            id={setting.key}
+            type="number"
+            value={value}
+            onChange={(e) => onChange(setting.key, e.target.value)}
+            className={`${meta.unit ? 'pr-20' : ''} ${changed ? 'border-blue-400 ring-1 ring-blue-100' : ''}`}
+            min={0}
+          />
+          {meta.unit && (
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+              {meta.unit}
+            </span>
+          )}
         </div>
       </CardContent>
     </Card>
   );
 }
 
-// Session Card Component for Desktop View - matching SessionCard styling
-function SessionCard({ session, isExpanded, toggleExpansion, onToggleStatus, onStatusUpdate, isAdmin }) {
-  const isDisabled = session.isEnabled === false;
-
-  return (
-    <Card className={`border-gray-200 ${isDisabled ? "border-red-200 bg-red-50/30" : ""}`}>
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-lg flex items-center gap-2">
-              {session.timeSlotName}
-              {isDisabled && (
-                <Badge variant="outline" className="text-red-600 border-red-200 bg-red-50 text-xs">
-                  Disabled
-                </Badge>
-              )}
-            </CardTitle>
-            <div className="flex items-center gap-3 mt-1.5 text-sm text-gray-500">
-              <span className="flex items-center">
-                <Users className="w-3.5 h-3.5 mr-1" />
-                {session.enrolledCount}/{session.capacity} enrolled
-              </span>
-              <Badge
-                variant="outline"
-                className={
-                  session.fillPercentage >= 80
-                    ? "bg-green-50 text-green-700 border-green-200"
-                    : session.fillPercentage >= 50
-                    ? "bg-blue-50 text-blue-700 border-blue-200"
-                    : "bg-gray-50 text-gray-600 border-gray-200"
-                }
-              >
-                {session.fillPercentage}% full
-              </Badge>
-            </div>
-          </div>
-          <div className="flex space-x-1">
-            {isAdmin && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onToggleStatus();
-                      }}
-                    >
-                      {session.isEnabled !== false ? (
-                        <ToggleRight className="w-4 h-4 text-green-600" />
-                      ) : (
-                        <ToggleLeft className="w-4 h-4 text-gray-400" />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {session.isEnabled !== false
-                      ? 'Disable this session'
-                      : 'Enable this session'}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleExpansion}
-              className="text-gray-400 hover:text-gray-700"
-            >
-              {isExpanded ? (
-                <ChevronUp className="w-4 h-4" />
-              ) : (
-                <ChevronDown className="w-4 h-4" />
-              )}
-              <span className="text-xs ml-1">{isExpanded ? 'Hide' : 'Students'}</span>
-            </Button>
-          </div>
-        </div>
-        <Progress
-          value={(session.enrolledCount / session.capacity) * 100}
-          className="h-1.5 mt-2"
-        />
-      </CardHeader>
-
-      {isExpanded && (
-        <CardContent className="pt-0">
-          {session.students.length > 0 ? (
-            <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
-              {session.students.map((student) => (
-                <StudentRow
-                  key={student.bookingId}
-                  student={student}
-                  onStatusUpdate={onStatusUpdate}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-lg">
-              <Users className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-              <div className="text-sm text-gray-500">No students enrolled</div>
-            </div>
-          )}
-        </CardContent>
-      )}
-    </Card>
-  );
-}

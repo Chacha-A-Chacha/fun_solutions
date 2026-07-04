@@ -40,6 +40,17 @@ export const POST = withRole('INSTRUCTOR', 'ADMIN')(async function POST(request)
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
+    // Licence class must match, and the class must be offered at this slot.
+    if (session.capacity <= 0) {
+      return NextResponse.json({ error: 'This session is not offered for its licence class.' }, { status: 400 });
+    }
+    if (student.category !== session.category) {
+      return NextResponse.json(
+        { error: `Student is licence class ${student.category}, but this session is for ${session.category}.` },
+        { status: 400 }
+      );
+    }
+
     // Check capacity
     if (session.bookings.length >= (session.capacity || SESSION_CONSTRAINTS.MAX_CAPACITY)) {
       return NextResponse.json({ error: ERROR_MESSAGES.SESSION_FULL }, { status: 400 });
@@ -57,6 +68,7 @@ export const POST = withRole('INSTRUCTOR', 'ADMIN')(async function POST(request)
       data: {
         studentId,
         sessionId,
+        category: session.category,
         status: 'BOOKED',
         weekOf
       },

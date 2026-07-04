@@ -33,6 +33,7 @@ async function getBookingHistory(request) {
       dayName: DAY_NAMES[b.session.day],
       timeSlot: b.session.timeSlot,
       timeSlotName: TIME_SLOT_NAMES[b.session.timeSlot],
+      category: b.category,
       status: b.status,
       weekOf: b.weekOf,
       attendedAt: b.attendedAt,
@@ -70,7 +71,8 @@ async function getBookingHistory(request) {
         id: student.id,
         name: student.name,
         email: student.email,
-        phoneNumber: student.phoneNumber
+        phoneNumber: student.phoneNumber,
+        category: student.category
       },
       bookings,
       summary

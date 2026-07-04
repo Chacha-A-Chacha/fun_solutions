@@ -42,7 +42,12 @@ export default function StudentLoginForm() {
           id="student-id"
           type="text"
           placeholder="e.g. DR-4824-25"
-disabled={disabled}
+          inputMode="text"
+          autoComplete="username"
+          autoCapitalize="characters"
+          autoCorrect="off"
+          spellCheck={false}
+          disabled={disabled}
           {...register('id', {
             required: 'Student ID is required',
             pattern: {
@@ -62,7 +67,12 @@ disabled={disabled}
           id="student-email"
           type="email"
           placeholder="Enter your email address"
-disabled={disabled}
+          inputMode="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          disabled={disabled}
           {...register('email', {
             required: 'Email is required',
             pattern: {

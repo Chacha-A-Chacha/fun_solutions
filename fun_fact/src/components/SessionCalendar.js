@@ -7,11 +7,13 @@
 import { useState, useEffect } from 'react';
 import { DAY_NAMES } from '@/app/lib/constants';
 import { useSessionData } from '@/app/hooks/useSessionData';
+import { useAuth } from '@/app/hooks/useAuth';
 import SessionCard from './SessionCard';
 import { RefreshCw, Calendar, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function SessionCalendar() {
+  const { student } = useAuth();
   const {
     sessions,
     sessionsByDay,
@@ -100,9 +102,9 @@ export default function SessionCalendar() {
       <div className="space-y-4 text-center py-8">
         <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto" />
         <p className="text-gray-700">Unable to load sessions</p>
-        <Button 
-          onClick={handleRefresh} 
-          variant="outline" 
+        <Button
+          onClick={handleRefresh}
+          variant="outline"
           className="mt-2"
           disabled={isRefreshing}
         >
@@ -121,7 +123,28 @@ export default function SessionCalendar() {
       </div>
     );
   }
-  
+
+  // No sessions are offered for this student's licence class yet
+  if (days.length === 0) {
+    return (
+      <div className="text-center py-10 border-2 border-dashed border-gray-200 rounded-lg space-y-3">
+        <Calendar className="w-12 h-12 text-gray-300 mx-auto" />
+        <div>
+          <p className="text-gray-700 font-medium">
+            No sessions are open for your class{student?.category ? ` (${student.category})` : ''} yet
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            Slots for your licence class haven&apos;t been scheduled. Please check back later or contact your instructor.
+          </p>
+        </div>
+        <Button onClick={handleRefresh} variant="outline" size="sm" disabled={isRefreshing}>
+          <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+          {isRefreshing ? 'Refreshing...' : 'Refresh'}
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Booking Status */}
@@ -180,7 +203,7 @@ export default function SessionCalendar() {
           </span>
         </div>
         
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+        <div className="flex gap-2 overflow-x-auto pb-2 px-1 -mx-1 snap-x sm:grid sm:grid-cols-3 md:grid-cols-6 sm:overflow-visible sm:pb-0 sm:px-0 sm:mx-0">
           {days.map((day) => {
             const isBooked = isDayBooked(day);
             const isSelected = day === selectedDay;
@@ -194,7 +217,7 @@ export default function SessionCalendar() {
                 onClick={() => handleDaySelect(day)}
                 disabled={!hasAvailableSlots && !isBooked}
                 className={`
-                  h-auto p-3 flex flex-col items-center gap-1
+                  h-auto p-3 flex flex-col items-center gap-1 shrink-0 min-w-[4.75rem] snap-start sm:min-w-0
                   ${isSelected
                     ? "bg-blue-900 hover:bg-blue-800 text-white"
                     : isBooked

@@ -140,6 +140,7 @@ export async function GET(request) {
         email: true,
         name: true,
         phoneNumber: true,
+        category: true,
         status: true
       }
     });

@@ -19,6 +19,8 @@ export const metadata = {
 
 export const viewport = {
   themeColor: '#1e3a8a',
+  // Extend under the notch / home indicator so we can pad with safe-area insets
+  viewportFit: 'cover',
 };
 
 const jsonLd = {

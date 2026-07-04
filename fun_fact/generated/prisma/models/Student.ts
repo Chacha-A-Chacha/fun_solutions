@@ -29,6 +29,7 @@ export type StudentMinAggregateOutputType = {
   email: string | null
   name: string | null
   phoneNumber: string | null
+  category: $Enums.LicenceClass | null
   status: $Enums.StudentStatus | null
   deactivatedAt: Date | null
   createdAt: Date | null
@@ -40,6 +41,7 @@ export type StudentMaxAggregateOutputType = {
   email: string | null
   name: string | null
   phoneNumber: string | null
+  category: $Enums.LicenceClass | null
   status: $Enums.StudentStatus | null
   deactivatedAt: Date | null
   createdAt: Date | null
@@ -51,6 +53,7 @@ export type StudentCountAggregateOutputType = {
   email: number
   name: number
   phoneNumber: number
+  category: number
   status: number
   deactivatedAt: number
   createdAt: number
@@ -64,6 +67,7 @@ export type StudentMinAggregateInputType = {
   email?: true
   name?: true
   phoneNumber?: true
+  category?: true
   status?: true
   deactivatedAt?: true
   createdAt?: true
@@ -75,6 +79,7 @@ export type StudentMaxAggregateInputType = {
   email?: true
   name?: true
   phoneNumber?: true
+  category?: true
   status?: true
   deactivatedAt?: true
   createdAt?: true
@@ -86,6 +91,7 @@ export type StudentCountAggregateInputType = {
   email?: true
   name?: true
   phoneNumber?: true
+  category?: true
   status?: true
   deactivatedAt?: true
   createdAt?: true
@@ -170,6 +176,7 @@ export type StudentGroupByOutputType = {
   email: string
   name: string
   phoneNumber: string | null
+  category: $Enums.LicenceClass
   status: $Enums.StudentStatus
   deactivatedAt: Date | null
   createdAt: Date
@@ -202,6 +209,7 @@ export type StudentWhereInput = {
   email?: Prisma.StringFilter<"Student"> | string
   name?: Prisma.StringFilter<"Student"> | string
   phoneNumber?: Prisma.StringNullableFilter<"Student"> | string | null
+  category?: Prisma.EnumLicenceClassFilter<"Student"> | $Enums.LicenceClass
   status?: Prisma.EnumStudentStatusFilter<"Student"> | $Enums.StudentStatus
   deactivatedAt?: Prisma.DateTimeNullableFilter<"Student"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Student"> | Date | string
@@ -214,6 +222,7 @@ export type StudentOrderByWithRelationInput = {
   email?: Prisma.SortOrder
   name?: Prisma.SortOrder
   phoneNumber?: Prisma.SortOrderInput | Prisma.SortOrder
+  category?: Prisma.SortOrder
   status?: Prisma.SortOrder
   deactivatedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -230,6 +239,7 @@ export type StudentWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.StudentWhereInput | Prisma.StudentWhereInput[]
   name?: Prisma.StringFilter<"Student"> | string
   phoneNumber?: Prisma.StringNullableFilter<"Student"> | string | null
+  category?: Prisma.EnumLicenceClassFilter<"Student"> | $Enums.LicenceClass
   status?: Prisma.EnumStudentStatusFilter<"Student"> | $Enums.StudentStatus
   deactivatedAt?: Prisma.DateTimeNullableFilter<"Student"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Student"> | Date | string
@@ -242,6 +252,7 @@ export type StudentOrderByWithAggregationInput = {
   email?: Prisma.SortOrder
   name?: Prisma.SortOrder
   phoneNumber?: Prisma.SortOrderInput | Prisma.SortOrder
+  category?: Prisma.SortOrder
   status?: Prisma.SortOrder
   deactivatedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -259,6 +270,7 @@ export type StudentScalarWhereWithAggregatesInput = {
   email?: Prisma.StringWithAggregatesFilter<"Student"> | string
   name?: Prisma.StringWithAggregatesFilter<"Student"> | string
   phoneNumber?: Prisma.StringNullableWithAggregatesFilter<"Student"> | string | null
+  category?: Prisma.EnumLicenceClassWithAggregatesFilter<"Student"> | $Enums.LicenceClass
   status?: Prisma.EnumStudentStatusWithAggregatesFilter<"Student"> | $Enums.StudentStatus
   deactivatedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Student"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Student"> | Date | string
@@ -270,6 +282,7 @@ export type StudentCreateInput = {
   email: string
   name: string
   phoneNumber?: string | null
+  category?: $Enums.LicenceClass
   status?: $Enums.StudentStatus
   deactivatedAt?: Date | string | null
   createdAt?: Date | string
@@ -282,6 +295,7 @@ export type StudentUncheckedCreateInput = {
   email: string
   name: string
   phoneNumber?: string | null
+  category?: $Enums.LicenceClass
   status?: $Enums.StudentStatus
   deactivatedAt?: Date | string | null
   createdAt?: Date | string
@@ -294,6 +308,7 @@ export type StudentUpdateInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.EnumLicenceClassFieldUpdateOperationsInput | $Enums.LicenceClass
   status?: Prisma.EnumStudentStatusFieldUpdateOperationsInput | $Enums.StudentStatus
   deactivatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -306,6 +321,7 @@ export type StudentUncheckedUpdateInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.EnumLicenceClassFieldUpdateOperationsInput | $Enums.LicenceClass
   status?: Prisma.EnumStudentStatusFieldUpdateOperationsInput | $Enums.StudentStatus
   deactivatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -318,6 +334,7 @@ export type StudentCreateManyInput = {
   email: string
   name: string
   phoneNumber?: string | null
+  category?: $Enums.LicenceClass
   status?: $Enums.StudentStatus
   deactivatedAt?: Date | string | null
   createdAt?: Date | string
@@ -329,6 +346,7 @@ export type StudentUpdateManyMutationInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.EnumLicenceClassFieldUpdateOperationsInput | $Enums.LicenceClass
   status?: Prisma.EnumStudentStatusFieldUpdateOperationsInput | $Enums.StudentStatus
   deactivatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -340,6 +358,7 @@ export type StudentUncheckedUpdateManyInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.EnumLicenceClassFieldUpdateOperationsInput | $Enums.LicenceClass
   status?: Prisma.EnumStudentStatusFieldUpdateOperationsInput | $Enums.StudentStatus
   deactivatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -357,6 +376,7 @@ export type StudentCountOrderByAggregateInput = {
   email?: Prisma.SortOrder
   name?: Prisma.SortOrder
   phoneNumber?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   status?: Prisma.SortOrder
   deactivatedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -368,6 +388,7 @@ export type StudentMaxOrderByAggregateInput = {
   email?: Prisma.SortOrder
   name?: Prisma.SortOrder
   phoneNumber?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   status?: Prisma.SortOrder
   deactivatedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -379,6 +400,7 @@ export type StudentMinOrderByAggregateInput = {
   email?: Prisma.SortOrder
   name?: Prisma.SortOrder
   phoneNumber?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   status?: Prisma.SortOrder
   deactivatedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -396,6 +418,10 @@ export type StringFieldUpdateOperationsInput = {
 
 export type NullableStringFieldUpdateOperationsInput = {
   set?: string | null
+}
+
+export type EnumLicenceClassFieldUpdateOperationsInput = {
+  set?: $Enums.LicenceClass
 }
 
 export type EnumStudentStatusFieldUpdateOperationsInput = {
@@ -429,6 +455,7 @@ export type StudentCreateWithoutBookingsInput = {
   email: string
   name: string
   phoneNumber?: string | null
+  category?: $Enums.LicenceClass
   status?: $Enums.StudentStatus
   deactivatedAt?: Date | string | null
   createdAt?: Date | string
@@ -440,6 +467,7 @@ export type StudentUncheckedCreateWithoutBookingsInput = {
   email: string
   name: string
   phoneNumber?: string | null
+  category?: $Enums.LicenceClass
   status?: $Enums.StudentStatus
   deactivatedAt?: Date | string | null
   createdAt?: Date | string
@@ -467,6 +495,7 @@ export type StudentUpdateWithoutBookingsInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.EnumLicenceClassFieldUpdateOperationsInput | $Enums.LicenceClass
   status?: Prisma.EnumStudentStatusFieldUpdateOperationsInput | $Enums.StudentStatus
   deactivatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -478,6 +507,7 @@ export type StudentUncheckedUpdateWithoutBookingsInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.EnumLicenceClassFieldUpdateOperationsInput | $Enums.LicenceClass
   status?: Prisma.EnumStudentStatusFieldUpdateOperationsInput | $Enums.StudentStatus
   deactivatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -520,6 +550,7 @@ export type StudentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   email?: boolean
   name?: boolean
   phoneNumber?: boolean
+  category?: boolean
   status?: boolean
   deactivatedAt?: boolean
   createdAt?: boolean
@@ -535,13 +566,14 @@ export type StudentSelectScalar = {
   email?: boolean
   name?: boolean
   phoneNumber?: boolean
+  category?: boolean
   status?: boolean
   deactivatedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type StudentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "name" | "phoneNumber" | "status" | "deactivatedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["student"]>
+export type StudentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "name" | "phoneNumber" | "category" | "status" | "deactivatedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["student"]>
 export type StudentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   bookings?: boolean | Prisma.Student$bookingsArgs<ExtArgs>
   _count?: boolean | Prisma.StudentCountOutputTypeDefaultArgs<ExtArgs>
@@ -557,6 +589,7 @@ export type $StudentPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     email: string
     name: string
     phoneNumber: string | null
+    category: $Enums.LicenceClass
     status: $Enums.StudentStatus
     deactivatedAt: Date | null
     createdAt: Date
@@ -935,6 +968,7 @@ export interface StudentFieldRefs {
   readonly email: Prisma.FieldRef<"Student", 'String'>
   readonly name: Prisma.FieldRef<"Student", 'String'>
   readonly phoneNumber: Prisma.FieldRef<"Student", 'String'>
+  readonly category: Prisma.FieldRef<"Student", 'LicenceClass'>
   readonly status: Prisma.FieldRef<"Student", 'StudentStatus'>
   readonly deactivatedAt: Prisma.FieldRef<"Student", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"Student", 'DateTime'>

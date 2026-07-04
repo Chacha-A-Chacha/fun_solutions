@@ -3,6 +3,7 @@ import prisma from '@/app/lib/db/prisma-client';
 import { DAY_NAMES, TIME_SLOT_NAMES } from '@/app/lib/constants';
 import { withRole } from '@/app/lib/utils/auth';
 import { getSetting } from '@/app/lib/utils/settings';
+import { LICENCE_CLASSES } from '@/app/lib/constants';
 import { z } from 'zod';
 
 const updateStudentSchema = z.object({
@@ -10,6 +11,7 @@ const updateStudentSchema = z.object({
   name: z.string().min(1, 'Name is required').optional(),
   email: z.string().email('Invalid email format').optional(),
   phoneNumber: z.string().optional().nullable(),
+  category: z.enum(LICENCE_CLASSES).optional(),
 });
 
 /**
@@ -49,6 +51,7 @@ export const GET = withRole('INSTRUCTOR', 'ADMIN')(async function GET(request, {
       dayName: DAY_NAMES[b.session.day],
       timeSlot: b.session.timeSlot,
       timeSlotName: TIME_SLOT_NAMES[b.session.timeSlot],
+      category: b.category,
       status: b.status,
       weekOf: b.weekOf,
       attendedAt: b.attendedAt,
@@ -87,6 +90,7 @@ export const GET = withRole('INSTRUCTOR', 'ADMIN')(async function GET(request, {
         name: student.name,
         email: student.email,
         phoneNumber: student.phoneNumber,
+        category: student.category,
         status: student.status,
         deactivatedAt: student.deactivatedAt,
         createdAt: student.createdAt

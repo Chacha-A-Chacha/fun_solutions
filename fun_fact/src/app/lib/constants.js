@@ -61,6 +61,47 @@ export const DAYS = {
     [DAYS.SUNDAY]: [TIME_SLOTS.SLOT_9_11, TIME_SLOTS.SLOT_11_13, TIME_SLOTS.SLOT_14_16, TIME_SLOTS.SLOT_16_18]
   };
   
+  // Kenyan NTSA driving licence classes (base classes only). Order matches the
+  // Prisma `LicenceClass` enum. Used for student registration and the per-category
+  // session capacity matrix.
+  export const LICENCE_CLASSES = [
+    'A1', 'A2', 'A3',
+    'B1', 'B2', 'B3',
+    'C1', 'C', 'CE', 'CD',
+    'D1', 'D2', 'D3',
+    'G'
+  ];
+
+  // Human-readable labels for each licence class
+  export const LICENCE_CLASS_NAMES = {
+    A1: 'A1 — Moped (up to 50cc)',
+    A2: 'A2 — Motorcycle (above 50cc)',
+    A3: 'A3 — Motorcycle taxi / three-wheeler',
+    B1: 'B1 — Light vehicle',
+    B2: 'B2 — Light vehicle (standard)',
+    B3: 'B3 — Light vehicle (professional)',
+    C1: 'C1 — Light truck',
+    C:  'C — Medium truck',
+    CE: 'CE — Medium truck with trailer',
+    CD: 'CD — Hazardous materials transport',
+    D1: 'D1 — Van (PSV)',
+    D2: 'D2 — Minibus (PSV)',
+    D3: 'D3 — Large bus (PSV)',
+    G:  'G — Plant & machinery'
+  };
+
+  // Grouping for UI (selectors, capacity matrix tabs)
+  export const LICENCE_CLASS_GROUPS = {
+    A: ['A1', 'A2', 'A3'],
+    B: ['B1', 'B2', 'B3'],
+    C: ['C1', 'C', 'CE', 'CD'],
+    D: ['D1', 'D2', 'D3'],
+    G: ['G']
+  };
+
+  // Default licence class assigned to students until an admin sets the real one
+  export const DEFAULT_LICENCE_CLASS = 'B2';
+
   // Session constraints (fallback defaults — DB SystemSetting takes precedence)
   export const SESSION_CONSTRAINTS = {
     MAX_CAPACITY: 4,

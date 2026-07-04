@@ -916,6 +916,7 @@ export const StudentScalarFieldEnum = {
   email: 'email',
   name: 'name',
   phoneNumber: 'phoneNumber',
+  category: 'category',
   status: 'status',
   deactivatedAt: 'deactivatedAt',
   createdAt: 'createdAt',
@@ -929,6 +930,7 @@ export const SessionScalarFieldEnum = {
   id: 'id',
   day: 'day',
   timeSlot: 'timeSlot',
+  category: 'category',
   capacity: 'capacity',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
@@ -942,6 +944,7 @@ export const BookingScalarFieldEnum = {
   id: 'id',
   studentId: 'studentId',
   sessionId: 'sessionId',
+  category: 'category',
   status: 'status',
   weekOf: 'weekOf',
   markedById: 'markedById',
@@ -1122,6 +1125,13 @@ export type SystemLogOrderByRelevanceFieldEnum = (typeof SystemLogOrderByRelevan
  * Reference to a field of type 'String'
  */
 export type StringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String'>
+    
+
+
+/**
+ * Reference to a field of type 'LicenceClass'
+ */
+export type EnumLicenceClassFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LicenceClass'>
     
 
 

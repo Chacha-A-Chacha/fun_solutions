@@ -12,11 +12,28 @@ export default function manifest() {
         src: '/icons/icon-192x192.png',
         sizes: '192x192',
         type: 'image/png',
+        purpose: 'any',
       },
       {
         src: '/icons/icon-512x512.png',
         sizes: '512x512',
         type: 'image/png',
+        purpose: 'any',
+      },
+      // Maskable variants for Android adaptive icons. NOTE: for best results these
+      // should be padded assets with a safe zone; reusing the standard icons works
+      // but may crop slightly inside the mask.
+      {
+        src: '/icons/icon-192x192.png',
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'maskable',
+      },
+      {
+        src: '/icons/icon-512x512.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'maskable',
       },
     ],
   };

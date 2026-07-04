@@ -247,6 +247,24 @@ export function SessionDataProvider({ children }) {
     fetchAllData();
   }, [fetchAllData]);
 
+  // Revalidate when the tab regains focus/visibility (throttled), so a student
+  // returning to a backgrounded tab sees fresh capacity before booking. Mobile
+  // browsers background tabs aggressively, so this keeps data current on return.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const maybeRefresh = () => {
+      if (document.visibilityState !== 'visible') return;
+      const last = lastRefresh ? new Date(lastRefresh).getTime() : 0;
+      if (Date.now() - last > 20000) fetchAllData();
+    };
+    document.addEventListener('visibilitychange', maybeRefresh);
+    window.addEventListener('focus', maybeRefresh);
+    return () => {
+      document.removeEventListener('visibilitychange', maybeRefresh);
+      window.removeEventListener('focus', maybeRefresh);
+    };
+  }, [isAuthenticated, lastRefresh, fetchAllData]);
+
   // Context value
   const value = {
     // Data

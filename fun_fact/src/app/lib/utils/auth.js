@@ -113,6 +113,7 @@ export async function getAuthenticatedStudent() {
         email: true,
         name: true,
         phoneNumber: true,
+        category: true,
         status: true
       }
     });

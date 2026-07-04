@@ -4,7 +4,7 @@ export default function PoweredByFooter({ variant = "light" }) {
   const isLight = variant === "light";
 
   return (
-    <footer className="py-4 text-center">
+    <footer className="py-4 text-center pb-[max(1rem,env(safe-area-inset-bottom))]">
       <a
         href="https://chacha.ke"
         target="_blank"

@@ -65,21 +65,21 @@ export default function SelectedSessions() {
               transition-all duration-200
             `}
           >
-            <div className="flex gap-3">
-              <div className={`p-2 rounded-full ${isOptimistic ? 'bg-blue-100' : 'bg-green-100'}`}>
+            <div className="flex items-center gap-3 min-w-0">
+              <div className={`h-9 w-9 shrink-0 flex items-center justify-center rounded-full ${isOptimistic ? 'bg-blue-100' : 'bg-green-100'}`}>
                 {isOptimistic ? (
                   <Clock className="w-5 h-5 text-blue-600" />
                 ) : (
                   <Calendar className="w-5 h-5 text-green-600" />
                 )}
               </div>
-              
-              <div>
-                <h3 className={`font-medium ${isOptimistic ? 'text-blue-800' : 'text-green-800'}`}>
+
+              <div className="min-w-0">
+                <h3 className={`font-medium truncate ${isOptimistic ? 'text-blue-800' : 'text-green-800'}`}>
                   {DAY_NAMES[booking.day]}
                   {isOptimistic && <span className="ml-2 text-xs">(Processing...)</span>}
                 </h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 truncate">
                   {TIME_SLOT_NAMES[booking.timeSlot]}
                 </p>
               </div>
@@ -90,7 +90,7 @@ export default function SelectedSessions() {
               size="sm"
               onClick={() => handleCancel(booking.id)}
               disabled={cancelingId === booking.id || bookingInProgress}
-              className="text-red-600 hover:bg-red-50 hover:text-red-700"
+              className="h-11 min-w-[88px] shrink-0 text-red-600 hover:bg-red-50 hover:text-red-700"
             >
               {cancelingId === booking.id ? (
                 <span className="text-xs">Cancelling...</span>

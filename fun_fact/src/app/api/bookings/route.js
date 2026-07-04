@@ -48,7 +48,7 @@ async function createBooking(request) {
     // Get session details before booking
     const sessionBefore = await prisma.session.findUnique({
       where: { id: sessionId },
-      select: { day: true, timeSlot: true }
+      select: { day: true, timeSlot: true, category: true }
     });
     
     if (!sessionBefore) {
@@ -95,6 +95,7 @@ async function createBooking(request) {
           where: { id: existing.id },
           data: {
             status: 'BOOKED',
+            category: sessionBefore.category,
             cancelledAt: null,
             markedById: null
           }
@@ -114,6 +115,7 @@ async function createBooking(request) {
         data: {
           student: { connect: { id: student.id } },
           session: { connect: { id: sessionId } },
+          category: sessionBefore.category,
           status: 'BOOKED',
           weekOf
         }

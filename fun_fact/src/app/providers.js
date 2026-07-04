@@ -6,11 +6,17 @@
 import { AuthProvider } from './hooks/useAuth';
 import { SessionDataProvider } from './hooks/useSessionData';
 import { Toaster } from 'react-hot-toast';
+import InstallPrompt from '@/components/InstallPrompt';
+import OfflineBanner from '@/components/OfflineBanner';
+import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar';
 
 export function Providers({ children }) {
   return (
     <AuthProvider>
       <SessionDataProvider>
+        <OfflineBanner />
+        <InstallPrompt />
+        <ServiceWorkerRegistrar />
         <Toaster 
           position="top-right"
           toastOptions={{

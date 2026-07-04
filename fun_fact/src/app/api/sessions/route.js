@@ -23,8 +23,13 @@ async function getSessions(request) {
     
     const weekOf = getCurrentWeekMonday();
 
-    // Get all sessions with their bookings for the current week
+    // Students only see sessions for their own licence class that are actually
+    // offered (capacity > 0). Disabled sessions are filtered out below.
     const sessions = await prisma.session.findMany({
+      where: {
+        category: student.category,
+        capacity: { gt: 0 }
+      },
       include: {
         bookings: {
           where: {

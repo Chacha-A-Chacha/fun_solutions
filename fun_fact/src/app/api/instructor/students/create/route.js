@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/db/prisma-client';
 import { z } from 'zod';
 import { withRole } from '@/app/lib/utils/auth';
+import { LICENCE_CLASSES } from '@/app/lib/constants';
 
 // Validation schema for student creation
 const createStudentSchema = z.object({
@@ -10,7 +11,8 @@ const createStudentSchema = z.object({
     .regex(/^DR-\d{4,5}-\d{2}$/, 'Student ID must be in format DR-XXXX-XX'),
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Invalid email format'),
-  phoneNumber: z.string().optional()
+  phoneNumber: z.string().optional(),
+  category: z.enum(LICENCE_CLASSES, { errorMap: () => ({ message: 'A valid licence class is required' }) })
 });
 
 /**
@@ -31,7 +33,7 @@ export const POST = withRole('ADMIN')(async function POST(request) {
       );
     }
     
-    const { id, name, email, phoneNumber } = validationResult.data;
+    const { id, name, email, phoneNumber, category } = validationResult.data;
     
     // Check if student ID already exists
     const existingStudentById = await prisma.student.findUnique({
@@ -63,7 +65,8 @@ export const POST = withRole('ADMIN')(async function POST(request) {
         id,
         name,
         email,
-        phoneNumber: phoneNumber || null
+        phoneNumber: phoneNumber || null,
+        category
       }
     });
     

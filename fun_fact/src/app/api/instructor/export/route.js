@@ -55,7 +55,7 @@ async function buildEnrollmentsCsv(opts) {
   });
 
   let csv = csvRow([
-    'Day', 'Time', 'Capacity', 'Enrolled', 'Available', 'Week Of',
+    'Day', 'Time', 'Class', 'Capacity', 'Enrolled', 'Available', 'Week Of',
     'Student ID', 'Student Name', 'Student Email', 'Student Phone', 'Booking Status'
   ]);
 
@@ -65,8 +65,11 @@ async function buildEnrollmentsCsv(opts) {
     const enrolled = session.bookings.length;
     const available = session.capacity - enrolled;
 
+    // Skip closed, empty slots (unopened category rows) to keep the export readable.
+    if (session.capacity === 0 && enrolled === 0) continue;
+
     if (enrolled === 0) {
-      csv += csvRow([day, time, session.capacity, enrolled, available, '', '', '', '', '', '']);
+      csv += csvRow([day, time, session.category, session.capacity, enrolled, available, '', '', '', '', '', '']);
       continue;
     }
 
@@ -74,8 +77,8 @@ async function buildEnrollmentsCsv(opts) {
       const s = booking.student;
       // Session columns only on the first row of each session for readability
       const sessionCols = index === 0
-        ? [day, time, session.capacity, enrolled, available]
-        : ['', '', '', '', ''];
+        ? [day, time, session.category, session.capacity, enrolled, available]
+        : ['', '', '', '', '', ''];
       csv += csvRow([
         ...sessionCols,
         formatDate(booking.weekOf),
@@ -99,14 +102,14 @@ async function buildStudentsCsv(opts) {
   const totalRequired = await getSetting('total_practicals_required', 15);
 
   let csv = csvRow([
-    'Student ID', 'Name', 'Email', 'Phone', 'Status',
+    'Student ID', 'Name', 'Email', 'Phone', 'Class', 'Status',
     'Completed', 'Total Required', 'Complete', 'Total Bookings', 'Created At', 'Deactivated At'
   ]);
 
   for (const student of students) {
     const completed = student.bookings.filter(b => b.status === 'COMPLETED').length;
     csv += csvRow([
-      student.id, student.name, student.email, student.phoneNumber || '', student.status,
+      student.id, student.name, student.email, student.phoneNumber || '', student.category, student.status,
       completed, totalRequired, completed >= totalRequired ? 'Yes' : 'No',
       student.bookings.length, formatDate(student.createdAt), formatDate(student.deactivatedAt)
     ]);
@@ -129,13 +132,13 @@ async function buildBookingsCsv(opts) {
   });
 
   let csv = csvRow([
-    'Booking ID', 'Student ID', 'Student Name', 'Student Status', 'Day', 'Time',
+    'Booking ID', 'Student ID', 'Student Name', 'Student Status', 'Class', 'Day', 'Time',
     'Week Of', 'Booking Status', 'Marked By', 'Attended At', 'Completed At', 'Notes'
   ]);
 
   for (const b of bookings) {
     csv += csvRow([
-      b.id, b.student.id, b.student.name, b.student.status,
+      b.id, b.student.id, b.student.name, b.student.status, b.category,
       DAY_NAMES[b.session.day], TIME_SLOT_NAMES[b.session.timeSlot],
       formatDate(b.weekOf), b.status, b.markedBy?.name || '',
       formatDate(b.attendedAt), formatDate(b.completedAt), b.notes || ''

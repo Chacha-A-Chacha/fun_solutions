@@ -22,7 +22,8 @@ import {
   History,
   Pencil,
   Ban,
-  RotateCcw
+  RotateCcw,
+  Loader2
 } from 'lucide-react';
 
 // Shadcn components
@@ -32,6 +33,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
+import { LICENCE_CLASSES, LICENCE_CLASS_NAMES } from '@/app/lib/constants';
 import {
   Table,
   TableBody,
@@ -72,6 +75,11 @@ export default function StudentsList({ isAdmin = false }) {
   const [pagination, setPagination] = useState(null);
   const [studentsPerPage, setStudentsPerPage] = useState(25);
   const [statusFilter, setStatusFilter] = useState('active');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+
+  // Bulk selection (by student id) for bulk actions
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   // Student history sheet
   const [historyStudent, setHistoryStudent] = useState(null);
@@ -87,7 +95,7 @@ export default function StudentsList({ isAdmin = false }) {
   const [searchTimeout, setSearchTimeout] = useState(null);
 
   // Fetch students data
-  const fetchStudents = useCallback(async (page = 1, search = '', limit = studentsPerPage, status = statusFilter) => {
+  const fetchStudents = useCallback(async (page = 1, search = '', limit = studentsPerPage, status = statusFilter, category = categoryFilter) => {
     try {
       setSearching(search !== '');
 
@@ -95,6 +103,7 @@ export default function StudentsList({ isAdmin = false }) {
         page: page.toString(),
         limit: limit.toString(),
         status,
+        ...(category && category !== 'all' && { category }),
         ...(search && { search })
       });
 
@@ -103,6 +112,7 @@ export default function StudentsList({ isAdmin = false }) {
       setStudents(data.students);
       setPagination(data.pagination);
       setAnalytics(data.analytics);
+      setSelectedIds(new Set()); // clear selection whenever the visible set changes
       setError(null);
     } catch (err) {
       console.error('Error fetching students:', err);
@@ -112,7 +122,7 @@ export default function StudentsList({ isAdmin = false }) {
       setLoading(false);
       setSearching(false);
     }
-  }, [studentsPerPage, statusFilter]);
+  }, [studentsPerPage, statusFilter, categoryFilter]);
 
   // Handle search with debouncing
   const handleSearchChange = (e) => {
@@ -150,7 +160,54 @@ export default function StudentsList({ isAdmin = false }) {
   const handleStatusFilterChange = (newStatus) => {
     setStatusFilter(newStatus);
     setCurrentPage(1);
-    fetchStudents(1, searchQuery, studentsPerPage, newStatus);
+    fetchStudents(1, searchQuery, studentsPerPage, newStatus, categoryFilter);
+  };
+
+  // Handle licence-class filter change
+  const handleCategoryFilterChange = (newCategory) => {
+    setCategoryFilter(newCategory);
+    setCurrentPage(1);
+    fetchStudents(1, searchQuery, studentsPerPage, statusFilter, newCategory);
+  };
+
+  // Selection helpers
+  const allVisibleSelected = students.length > 0 && students.every((s) => selectedIds.has(s.id));
+  const toggleSelectAll = () => {
+    setSelectedIds((prev) => {
+      if (students.every((s) => prev.has(s.id))) return new Set();
+      return new Set(students.map((s) => s.id));
+    });
+  };
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  // Bulk deactivate the selected active students (admin only)
+  const handleBulkDeactivate = async () => {
+    const targets = students.filter((s) => selectedIds.has(s.id) && s.status === 'ACTIVE');
+    if (targets.length === 0) {
+      toast.error('No active students selected');
+      return;
+    }
+    setBulkBusy(true);
+    try {
+      const results = await Promise.allSettled(
+        targets.map((s) => axios.patch(`/api/instructor/students/${s.id}/status`, { status: 'INACTIVE' }))
+      );
+      const ok = results.filter((r) => r.status === 'fulfilled').length;
+      const failed = results.length - ok;
+      toast.success(`Deactivated ${ok}${failed ? `, ${failed} failed` : ''}`);
+      refreshData();
+    } catch {
+      toast.error('Bulk deactivate failed');
+      refreshData();
+    } finally {
+      setBulkBusy(false);
+    }
   };
 
   // Refresh data
@@ -395,6 +452,18 @@ export default function StudentsList({ isAdmin = false }) {
               </SelectContent>
             </Select>
 
+            <Select value={categoryFilter} onValueChange={handleCategoryFilterChange}>
+              <SelectTrigger className="w-full md:w-44">
+                <SelectValue placeholder="All classes" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All classes</SelectItem>
+                {LICENCE_CLASSES.map((c) => (
+                  <SelectItem key={c} value={c}>{LICENCE_CLASS_NAMES[c]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Select value={studentsPerPage.toString()} onValueChange={handleLimitChange}>
               <SelectTrigger className="w-full md:w-32">
                 <SelectValue />
@@ -408,11 +477,43 @@ export default function StudentsList({ isAdmin = false }) {
             </Select>
           </div>
 
+          {/* Bulk action bar (admin) */}
+          {isAdmin && selectedIds.size > 0 && (
+            <div className="flex items-center justify-between mb-4 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
+              <span className="text-sm font-medium text-blue-800">{selectedIds.size} selected</span>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} disabled={bulkBusy}>
+                  Clear
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-red-600 border-red-200 hover:bg-red-50"
+                  disabled={bulkBusy}
+                  onClick={handleBulkDeactivate}
+                >
+                  {bulkBusy
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : <><Ban className="w-4 h-4 mr-1" /> Deactivate selected</>}
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Students Table - Desktop */}
           <div className="hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow>
+                  {isAdmin && (
+                    <TableHead className="w-8">
+                      <Checkbox
+                        checked={allVisibleSelected}
+                        onCheckedChange={toggleSelectAll}
+                        aria-label="Select all"
+                      />
+                    </TableHead>
+                  )}
                   <TableHead>Student</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead>Progress</TableHead>
@@ -421,10 +522,24 @@ export default function StudentsList({ isAdmin = false }) {
               </TableHeader>
               <TableBody>
                 {students.map((student) => (
-                  <TableRow key={student.id}>
+                  <TableRow key={student.id} data-state={selectedIds.has(student.id) ? 'selected' : undefined}>
+                    {isAdmin && (
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.has(student.id)}
+                          onCheckedChange={() => toggleSelect(student.id)}
+                          aria-label={`Select ${student.name}`}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-gray-900">{student.name}</span>
+                        {student.category && (
+                          <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700 text-xs">
+                            {student.category}
+                          </Badge>
+                        )}
                         {student.status === 'INACTIVE' && (
                           <Badge variant="secondary" className="bg-gray-200 text-gray-600 text-xs">
                             Inactive
@@ -516,6 +631,11 @@ export default function StudentsList({ isAdmin = false }) {
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-gray-900">{student.name}</span>
+                        {student.category && (
+                          <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700 text-xs">
+                            {student.category}
+                          </Badge>
+                        )}
                         {student.status === 'INACTIVE' && (
                           <Badge variant="secondary" className="bg-gray-200 text-gray-600 text-xs">Inactive</Badge>
                         )}
@@ -707,7 +827,7 @@ export default function StudentsList({ isAdmin = false }) {
               className={toggleStudent?.status === 'INACTIVE' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}
             >
               {togglingStatus
-                ? <RefreshCcw className="w-4 h-4 animate-spin" />
+                ? <Loader2 className="w-4 h-4 animate-spin" />
                 : toggleStudent?.status === 'INACTIVE' ? 'Reactivate' : 'Deactivate'}
             </AlertDialogAction>
           </AlertDialogFooter>

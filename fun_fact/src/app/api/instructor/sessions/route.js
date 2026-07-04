@@ -17,8 +17,24 @@ export const GET = withRole('INSTRUCTOR', 'ADMIN')(async function GET(request) {
     const weekOfParam = searchParams.get('weekOf');
     const weekOf = weekOfParam ? getWeekMondayFor(new Date(weekOfParam)) : getCurrentWeekMonday();
 
+    // Optional ?category= filter, and whether to include closed (capacity 0) slots.
+    const categoryParam = searchParams.get('category');
+    const includeClosed = searchParams.get('includeClosed') === 'true';
+
+    const where = {};
+    if (categoryParam) where.category = categoryParam;
+    // By default show only offered slots or those with active bookings this week,
+    // so the grid isn't flooded with the hundreds of unopened category rows.
+    if (!includeClosed) {
+      where.OR = [
+        { capacity: { gt: 0 } },
+        { bookings: { some: { weekOf, status: { not: 'CANCELLED' } } } }
+      ];
+    }
+
     // Get all sessions with their bookings for the target week
     const sessions = await prisma.session.findMany({
+      where,
       include: {
         bookings: {
           where: {
@@ -42,27 +58,29 @@ export const GET = withRole('INSTRUCTOR', 'ADMIN')(async function GET(request) {
       },
       orderBy: [
         { day: 'asc' },
-        { timeSlot: 'asc' }
+        { timeSlot: 'asc' },
+        { category: 'asc' }
       ]
     });
     
     // Format the session data for display
     const formattedSessions = sessions.map(session => {
-      const { day, timeSlot, capacity, bookings, metadata } = session;
-      
+      const { day, timeSlot, category, capacity, bookings, metadata } = session;
+
       // Check if session is enabled (default to true if not specified)
       const isEnabled = metadata?.isEnabled !== false;
-      
+
       return {
         id: session.id,
         day: day,
         dayName: DAY_NAMES[day],
         timeSlot: timeSlot,
         timeSlotName: TIME_SLOT_NAMES[timeSlot],
+        category: category,
         capacity: capacity,
         enrolledCount: bookings.length,
         availableSpots: capacity - bookings.length,
-        fillPercentage: Math.round((bookings.length / capacity) * 100),
+        fillPercentage: capacity > 0 ? Math.round((bookings.length / capacity) * 100) : 0,
         isEnabled: isEnabled,
         students: bookings.map(booking => ({
           id: booking.student.id,

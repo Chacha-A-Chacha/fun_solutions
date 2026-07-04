@@ -17,14 +17,22 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
+import { LICENCE_CLASSES, LICENCE_CLASS_NAMES, DEFAULT_LICENCE_CLASS } from '@/app/lib/constants';
 
 // Validation schema
 const studentFormSchema = z.object({
   id: z.string()
     .min(1, { message: 'Student ID is required' })
-    .regex(/^DR-\d{4,5}-\d{2}$/, { 
-      message: 'Student ID must be in format DR-XXXX-XX' 
+    .regex(/^DR-\d{4,5}-\d{2}$/, {
+      message: 'Student ID must be in format DR-XXXX-XX'
     }),
   name: z.string()
     .min(1, { message: 'Name is required' })
@@ -33,6 +41,7 @@ const studentFormSchema = z.object({
     .min(1, { message: 'Email is required' })
     .email({ message: 'Invalid email address' }),
   phoneNumber: z.string().optional(),
+  category: z.enum(LICENCE_CLASSES, { errorMap: () => ({ message: 'Select a licence class' }) }),
 });
 
 export default function CreateStudentForm({ onSuccess }) {
@@ -46,6 +55,7 @@ export default function CreateStudentForm({ onSuccess }) {
       name: '',
       email: '',
       phoneNumber: '',
+      category: DEFAULT_LICENCE_CLASS,
     },
   });
 
@@ -133,10 +143,10 @@ export default function CreateStudentForm({ onSuccess }) {
             <FormItem>
               <FormLabel>Phone Number</FormLabel>
               <FormControl>
-                <Input 
-                  placeholder="+1 (123) 456-7890" 
-                  {...field} 
-                  disabled={isSubmitting} 
+                <Input
+                  placeholder="+254 7XX XXX XXX"
+                  {...field}
+                  disabled={isSubmitting}
                 />
               </FormControl>
               <FormDescription>
@@ -146,7 +156,33 @@ export default function CreateStudentForm({ onSuccess }) {
             </FormItem>
           )}
         />
-        
+
+        <FormField
+          control={form.control}
+          name="category"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Licence Class*</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select licence class" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {LICENCE_CLASSES.map((c) => (
+                    <SelectItem key={c} value={c}>{LICENCE_CLASS_NAMES[c]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                The driving class this student is booking practicals for.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? (
             <>

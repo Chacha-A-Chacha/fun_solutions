@@ -9,6 +9,10 @@ const adapter = new PrismaMariaDb({
   port: parseInt(process.env.DATABASE_PORT || '3306'),
   connectTimeout: 5000,
   acquireTimeout: 5000,
+  // Needed for local MySQL 8 (caching_sha2_password) over a non-TLS socket: after
+  // a MySQL restart the credential cache clears and the driver must fetch the RSA
+  // public key. No-op on the production MariaDB (native-password auth).
+  allowPublicKeyRetrieval: true,
 });
 
 // Add prisma to the global type

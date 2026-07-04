@@ -18,6 +18,13 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -25,6 +32,7 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet';
 import { Loader2, Pencil } from 'lucide-react';
+import { LICENCE_CLASSES, LICENCE_CLASS_NAMES, DEFAULT_LICENCE_CLASS } from '@/app/lib/constants';
 
 const editStudentSchema = z.object({
   id: z.string()
@@ -35,6 +43,7 @@ const editStudentSchema = z.object({
   name: z.string().min(1, { message: 'Name is required' }).max(100),
   email: z.string().email({ message: 'Invalid email address' }),
   phoneNumber: z.string().optional(),
+  category: z.enum(LICENCE_CLASSES, { errorMap: () => ({ message: 'Select a licence class' }) }),
 });
 
 export default function EditStudentSheet({ student, open, onOpenChange, onSuccess }) {
@@ -47,6 +56,7 @@ export default function EditStudentSheet({ student, open, onOpenChange, onSucces
       name: '',
       email: '',
       phoneNumber: '',
+      category: DEFAULT_LICENCE_CLASS,
     },
   });
 
@@ -58,6 +68,7 @@ export default function EditStudentSheet({ student, open, onOpenChange, onSucces
         name: student.name || '',
         email: student.email || '',
         phoneNumber: student.phoneNumber || '',
+        category: student.category || DEFAULT_LICENCE_CLASS,
       });
     }
   }, [student, open, form]);
@@ -159,6 +170,32 @@ export default function EditStudentSheet({ student, open, onOpenChange, onSucces
                         disabled={isSubmitting}
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Licence Class*</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select licence class" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {LICENCE_CLASSES.map((c) => (
+                          <SelectItem key={c} value={c}>{LICENCE_CLASS_NAMES[c]}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Changing this switches which sessions the student can book.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

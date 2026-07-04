@@ -34,6 +34,13 @@ import {
   Clock,
   History
 } from 'lucide-react';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { Skeleton } from '@/components/ui/skeleton';
 import SessionCalendar from '@/components/SessionCalendar';
 import SelectedSessions from '@/components/SelectedSessions';
 import StudentHistorySheet from '@/components/StudentHistorySheet';
@@ -76,6 +83,11 @@ export default function Dashboard() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  // Guidelines start open on desktop, collapsed on mobile (less scroll to the calendar).
+  // Computed once client-side — this screen renders after the auth gate, so no SSR mismatch.
+  const [guidelinesDefault] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches ? 'guidelines' : undefined
+  );
   const router = useRouter();
 
   // Generate name abbreviation
@@ -122,14 +134,16 @@ export default function Dashboard() {
     }
   }, [isAuthenticated, authLoading, router]);
 
-  // Show loading state
+  // Show a layout-shaped skeleton while auth resolves (better perceived speed on mobile)
   if (authLoading || !isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mx-auto"></div>
-          <p className="text-gray-500 mt-4">Loading your dashboard...</p>
-        </div>
+      <div className="min-h-screen bg-slate-50">
+        <div className="bg-blue-900 h-16 pt-[env(safe-area-inset-top)] shadow-lg" />
+        <main className="container mx-auto px-4 py-6 space-y-6">
+          <Skeleton className="h-12 w-full rounded-lg" />
+          <Skeleton className="h-40 w-full rounded-lg" />
+          <Skeleton className="h-72 w-full rounded-lg" />
+        </main>
       </div>
     );
   }
@@ -137,11 +151,11 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <header className="bg-blue-900 shadow-lg sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <CalendarCheck className="w-6 h-6 text-blue-200" />
-            <h1 className="text-lg font-bold text-white">Session Scheduler</h1>
+      <header className="bg-blue-900 shadow-lg sticky top-0 z-10 pt-[env(safe-area-inset-top)]">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center gap-3">
+          <div className="flex items-center space-x-2 min-w-0">
+            <CalendarCheck className="w-6 h-6 text-blue-200 shrink-0" />
+            <h1 className="text-lg font-bold text-white truncate">Session Scheduler</h1>
           </div>
 
           {/* Last refresh indicator */}
@@ -159,7 +173,7 @@ export default function Dashboard() {
           </div>
 
           {/* History & Profile */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
           <Button
             size="sm"
             variant="outline"
@@ -210,6 +224,9 @@ export default function Dashboard() {
                   <div>
                     <div className="font-semibold">{student.name}</div>
                     <div className="text-xs text-gray-500">Student ID: {student.id}</div>
+                    {student.category && (
+                      <div className="text-xs text-blue-600 font-medium mt-0.5">Class {student.category}</div>
+                    )}
                   </div>
                 </div>
               </DropdownMenuLabel>
@@ -236,18 +253,16 @@ export default function Dashboard() {
       <StudentHistorySheet selfMode open={historyOpen} onOpenChange={setHistoryOpen} />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
-        {/* Instructions Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Info className="w-5 h-5 text-blue-900" />
-              Booking Guidelines
-            </CardTitle>
-            <CardDescription>
-              Key information for session selection
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        {/* Instructions — collapsible on mobile to keep the calendar within reach */}
+        <Accordion type="single" collapsible defaultValue={guidelinesDefault} className="w-full">
+          <AccordionItem value="guidelines" className="border rounded-lg bg-card shadow-sm">
+            <AccordionTrigger className="px-4 sm:px-6 hover:no-underline">
+              <span className="flex items-center gap-2 font-semibold">
+                <Info className="w-5 h-5 text-blue-900" />
+                Booking Guidelines
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 sm:px-6">
             <div className="grid md:grid-cols-2 gap-4">
               <div className="bg-blue-50 p-4 rounded-lg">
                 <h3 className="font-semibold text-blue-800 mb-2">Session Rules</h3>
@@ -262,7 +277,7 @@ export default function Dashboard() {
                   </li>
                   <li className="flex items-center">
                     <span className="mr-2">•</span>
-                    Maximum {settings.max_capacity_per_session} students per session
+                    You only see sessions for your licence class{student?.category ? ` (${student.category})` : ''}
                   </li>
                   <li className="flex items-center">
                     <span className="mr-2">•</span>
@@ -292,8 +307,9 @@ export default function Dashboard() {
                 </ul>
               </div>
             </div>
-          </CardContent>
-        </Card>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
         {/* Current Selections */}
         <Card>
@@ -311,9 +327,16 @@ export default function Dashboard() {
         {/* Session Selection Calendar */}
         <Card>
           <CardHeader>
-            <CardTitle>Available Sessions</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              Available Sessions
+              {student?.category && (
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                  Class {student.category}
+                </span>
+              )}
+            </CardTitle>
             <CardDescription>
-              Choose your practical sessions
+              Choose your practical sessions — only slots for your licence class are shown
             </CardDescription>
           </CardHeader>
           <CardContent>

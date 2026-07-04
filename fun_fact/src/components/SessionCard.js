@@ -101,17 +101,11 @@ export default function SessionCard({ session }) {
           )}
         </div>
         
-        {/* Show explanation if day is already booked */}
+        {/* Day-specific hint only (the weekly-limit state is communicated once
+            at the section level, not repeated under every card). */}
         {dayAlreadyBooked && (
           <p className="text-xs text-amber-600 mt-2">
             You already have a session on this day
-          </p>
-        )}
-        
-        {/* Show explanation if max bookings reached */}
-        {!dayAlreadyBooked && hasReachedBookingLimit && !booked && (
-          <p className="text-xs text-amber-600 mt-2">
-            You've reached your weekly booking limit
           </p>
         )}
       </CardContent>

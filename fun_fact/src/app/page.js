@@ -48,13 +48,10 @@ export default async function LoginPage() {
                 <Info className="w-4 h-4 text-blue-700" />
                 Session Guidelines
               </div>
-              <ul className="text-xs text-slate-600 space-y-0.5 ml-5.5 list-disc">
-                <li>Available Monday–Thursday &amp; weekends</li>
+              <ul className="text-xs text-slate-600 space-y-0.5 ml-5 list-disc">
+                <li>Available Monday–Friday &amp; weekends</li>
                 <li>Select up to {settings.max_days_per_week} days per week</li>
-                <li>
-                  Maximum {settings.max_capacity_per_session} students per
-                  session
-                </li>
+                <li>You only see sessions for your licence class</li>
                 <li>{settings.max_sessions_per_day === 1 ? 'One session per day' : `Up to ${settings.max_sessions_per_day} sessions per day`}</li>
               </ul>
             </div>

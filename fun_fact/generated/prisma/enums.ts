@@ -17,6 +17,26 @@ export const StudentStatus = {
 export type StudentStatus = (typeof StudentStatus)[keyof typeof StudentStatus]
 
 
+export const LicenceClass = {
+  A1: 'A1',
+  A2: 'A2',
+  A3: 'A3',
+  B1: 'B1',
+  B2: 'B2',
+  B3: 'B3',
+  C1: 'C1',
+  C: 'C',
+  CE: 'CE',
+  CD: 'CD',
+  D1: 'D1',
+  D2: 'D2',
+  D3: 'D3',
+  G: 'G'
+} as const
+
+export type LicenceClass = (typeof LicenceClass)[keyof typeof LicenceClass]
+
+
 export const BookingStatus = {
   BOOKED: 'BOOKED',
   ATTENDED: 'ATTENDED',

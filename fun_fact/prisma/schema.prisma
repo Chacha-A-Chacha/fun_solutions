@@ -15,11 +15,32 @@ enum StudentStatus {
   INACTIVE
 }
 
+// Kenyan NTSA driving licence classes (base classes only; E/F endorsements
+// are modelled separately if/when needed). Default B2 lets existing rows
+// backfill safely during the additive migration.
+enum LicenceClass {
+  A1
+  A2
+  A3
+  B1
+  B2
+  B3
+  C1
+  C
+  CE
+  CD
+  D1
+  D2
+  D3
+  G
+}
+
 model Student {
   id            String        @id // Student ID like DR-4824-25
   email         String        @unique
   name          String
   phoneNumber   String?
+  category      LicenceClass  @default(B2)
   status        StudentStatus @default(ACTIVE)
   deactivatedAt DateTime?
   bookings      Booking[]
@@ -27,19 +48,21 @@ model Student {
   updatedAt     DateTime      @updatedAt
 
   @@index([status])
+  @@index([category])
 }
 
 model Session {
-  id        String    @id @default(uuid())
+  id        String       @id @default(uuid())
   day       Day
   timeSlot  TimeSlot
-  capacity  Int       @default(4)
+  category  LicenceClass @default(B2)
+  capacity  Int          @default(0) // per-category slots; 0 = category not offered at this day/time
   bookings  Booking[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
   metadata  Json?
 
-  @@unique([day, timeSlot])
+  @@unique([day, timeSlot, category])
 }
 
 enum BookingStatus {
@@ -57,6 +80,7 @@ model Booking {
   studentId     String
   session       Session       @relation(fields: [sessionId], references: [id])
   sessionId     String
+  category      LicenceClass  @default(B2) // denormalized from session at creation
   status        BookingStatus @default(BOOKED)
   weekOf        DateTime      @default(now()) // Monday of the booking week
   markedBy      User?         @relation("BookingsMarked", fields: [markedById], references: [id])

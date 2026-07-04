@@ -43,12 +43,10 @@ export const PATCH = withRole('ADMIN')(async function PATCH(request) {
         data: { value: String(value) }
       });
 
-      // Sync per-session capacity when global setting changes
-      if (key === 'max_capacity_per_session') {
-        await prisma.session.updateMany({
-          data: { capacity: parseInt(value, 10) }
-        });
-      }
+      // Note: per-session capacity is no longer synced from this global setting.
+      // Capacity is set per (day, timeSlot, licence class) via the capacity matrix
+      // (/api/admin/session-capacities). `max_capacity_per_session` now only acts
+      // as the default capacity applied to the default class when seeding new slots.
 
       results.push({ key, value: String(value), updated: true });
     }

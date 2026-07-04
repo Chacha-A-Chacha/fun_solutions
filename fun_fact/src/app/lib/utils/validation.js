@@ -89,6 +89,31 @@ export async function validateSessionBooking(studentId, sessionId) {
       };
     }
 
+    // A capacity of 0 means this licence class is not offered at this day/time.
+    if (session.capacity <= 0) {
+      return {
+        valid: false,
+        error: 'This session is not available for your licence class.'
+      };
+    }
+
+    // The student may only book sessions for their own licence class.
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+      select: { category: true }
+    });
+
+    if (!student) {
+      return { valid: false, error: 'Student not found' };
+    }
+
+    if (student.category !== session.category) {
+      return {
+        valid: false,
+        error: 'This session is for a different licence class.'
+      };
+    }
+
     // Fetch dynamic settings
     const maxCapacity = await getSetting('max_capacity_per_session', 4);
     const maxDaysPerWeek = await getSetting('max_days_per_week', 3);

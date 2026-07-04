@@ -38,6 +38,7 @@ export type SessionMinAggregateOutputType = {
   id: string | null
   day: $Enums.Day | null
   timeSlot: $Enums.TimeSlot | null
+  category: $Enums.LicenceClass | null
   capacity: number | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -47,6 +48,7 @@ export type SessionMaxAggregateOutputType = {
   id: string | null
   day: $Enums.Day | null
   timeSlot: $Enums.TimeSlot | null
+  category: $Enums.LicenceClass | null
   capacity: number | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -56,6 +58,7 @@ export type SessionCountAggregateOutputType = {
   id: number
   day: number
   timeSlot: number
+  category: number
   capacity: number
   createdAt: number
   updatedAt: number
@@ -76,6 +79,7 @@ export type SessionMinAggregateInputType = {
   id?: true
   day?: true
   timeSlot?: true
+  category?: true
   capacity?: true
   createdAt?: true
   updatedAt?: true
@@ -85,6 +89,7 @@ export type SessionMaxAggregateInputType = {
   id?: true
   day?: true
   timeSlot?: true
+  category?: true
   capacity?: true
   createdAt?: true
   updatedAt?: true
@@ -94,6 +99,7 @@ export type SessionCountAggregateInputType = {
   id?: true
   day?: true
   timeSlot?: true
+  category?: true
   capacity?: true
   createdAt?: true
   updatedAt?: true
@@ -191,6 +197,7 @@ export type SessionGroupByOutputType = {
   id: string
   day: $Enums.Day
   timeSlot: $Enums.TimeSlot
+  category: $Enums.LicenceClass
   capacity: number
   createdAt: Date
   updatedAt: Date
@@ -224,6 +231,7 @@ export type SessionWhereInput = {
   id?: Prisma.StringFilter<"Session"> | string
   day?: Prisma.EnumDayFilter<"Session"> | $Enums.Day
   timeSlot?: Prisma.EnumTimeSlotFilter<"Session"> | $Enums.TimeSlot
+  category?: Prisma.EnumLicenceClassFilter<"Session"> | $Enums.LicenceClass
   capacity?: Prisma.IntFilter<"Session"> | number
   createdAt?: Prisma.DateTimeFilter<"Session"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Session"> | Date | string
@@ -235,6 +243,7 @@ export type SessionOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   day?: Prisma.SortOrder
   timeSlot?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   capacity?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -245,23 +254,25 @@ export type SessionOrderByWithRelationInput = {
 
 export type SessionWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  day_timeSlot?: Prisma.SessionDayTimeSlotCompoundUniqueInput
+  day_timeSlot_category?: Prisma.SessionDayTimeSlotCategoryCompoundUniqueInput
   AND?: Prisma.SessionWhereInput | Prisma.SessionWhereInput[]
   OR?: Prisma.SessionWhereInput[]
   NOT?: Prisma.SessionWhereInput | Prisma.SessionWhereInput[]
   day?: Prisma.EnumDayFilter<"Session"> | $Enums.Day
   timeSlot?: Prisma.EnumTimeSlotFilter<"Session"> | $Enums.TimeSlot
+  category?: Prisma.EnumLicenceClassFilter<"Session"> | $Enums.LicenceClass
   capacity?: Prisma.IntFilter<"Session"> | number
   createdAt?: Prisma.DateTimeFilter<"Session"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Session"> | Date | string
   metadata?: Prisma.JsonNullableFilter<"Session">
   bookings?: Prisma.BookingListRelationFilter
-}, "id" | "day_timeSlot">
+}, "id" | "day_timeSlot_category">
 
 export type SessionOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   day?: Prisma.SortOrder
   timeSlot?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   capacity?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -280,6 +291,7 @@ export type SessionScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"Session"> | string
   day?: Prisma.EnumDayWithAggregatesFilter<"Session"> | $Enums.Day
   timeSlot?: Prisma.EnumTimeSlotWithAggregatesFilter<"Session"> | $Enums.TimeSlot
+  category?: Prisma.EnumLicenceClassWithAggregatesFilter<"Session"> | $Enums.LicenceClass
   capacity?: Prisma.IntWithAggregatesFilter<"Session"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Session"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Session"> | Date | string
@@ -290,6 +302,7 @@ export type SessionCreateInput = {
   id?: string
   day: $Enums.Day
   timeSlot: $Enums.TimeSlot
+  category?: $Enums.LicenceClass
   capacity?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -301,6 +314,7 @@ export type SessionUncheckedCreateInput = {
   id?: string
   day: $Enums.Day
   timeSlot: $Enums.TimeSlot
+  category?: $Enums.LicenceClass
   capacity?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -312,6 +326,7 @@ export type SessionUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   day?: Prisma.EnumDayFieldUpdateOperationsInput | $Enums.Day
   timeSlot?: Prisma.EnumTimeSlotFieldUpdateOperationsInput | $Enums.TimeSlot
+  category?: Prisma.EnumLicenceClassFieldUpdateOperationsInput | $Enums.LicenceClass
   capacity?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -323,6 +338,7 @@ export type SessionUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   day?: Prisma.EnumDayFieldUpdateOperationsInput | $Enums.Day
   timeSlot?: Prisma.EnumTimeSlotFieldUpdateOperationsInput | $Enums.TimeSlot
+  category?: Prisma.EnumLicenceClassFieldUpdateOperationsInput | $Enums.LicenceClass
   capacity?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -334,6 +350,7 @@ export type SessionCreateManyInput = {
   id?: string
   day: $Enums.Day
   timeSlot: $Enums.TimeSlot
+  category?: $Enums.LicenceClass
   capacity?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -344,6 +361,7 @@ export type SessionUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   day?: Prisma.EnumDayFieldUpdateOperationsInput | $Enums.Day
   timeSlot?: Prisma.EnumTimeSlotFieldUpdateOperationsInput | $Enums.TimeSlot
+  category?: Prisma.EnumLicenceClassFieldUpdateOperationsInput | $Enums.LicenceClass
   capacity?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -354,6 +372,7 @@ export type SessionUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   day?: Prisma.EnumDayFieldUpdateOperationsInput | $Enums.Day
   timeSlot?: Prisma.EnumTimeSlotFieldUpdateOperationsInput | $Enums.TimeSlot
+  category?: Prisma.EnumLicenceClassFieldUpdateOperationsInput | $Enums.LicenceClass
   capacity?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -366,15 +385,17 @@ export type SessionOrderByRelevanceInput = {
   search: string
 }
 
-export type SessionDayTimeSlotCompoundUniqueInput = {
+export type SessionDayTimeSlotCategoryCompoundUniqueInput = {
   day: $Enums.Day
   timeSlot: $Enums.TimeSlot
+  category: $Enums.LicenceClass
 }
 
 export type SessionCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   day?: Prisma.SortOrder
   timeSlot?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   capacity?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -389,6 +410,7 @@ export type SessionMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   day?: Prisma.SortOrder
   timeSlot?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   capacity?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -398,6 +420,7 @@ export type SessionMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   day?: Prisma.SortOrder
   timeSlot?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   capacity?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -446,6 +469,7 @@ export type SessionCreateWithoutBookingsInput = {
   id?: string
   day: $Enums.Day
   timeSlot: $Enums.TimeSlot
+  category?: $Enums.LicenceClass
   capacity?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -456,6 +480,7 @@ export type SessionUncheckedCreateWithoutBookingsInput = {
   id?: string
   day: $Enums.Day
   timeSlot: $Enums.TimeSlot
+  category?: $Enums.LicenceClass
   capacity?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -482,6 +507,7 @@ export type SessionUpdateWithoutBookingsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   day?: Prisma.EnumDayFieldUpdateOperationsInput | $Enums.Day
   timeSlot?: Prisma.EnumTimeSlotFieldUpdateOperationsInput | $Enums.TimeSlot
+  category?: Prisma.EnumLicenceClassFieldUpdateOperationsInput | $Enums.LicenceClass
   capacity?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -492,6 +518,7 @@ export type SessionUncheckedUpdateWithoutBookingsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   day?: Prisma.EnumDayFieldUpdateOperationsInput | $Enums.Day
   timeSlot?: Prisma.EnumTimeSlotFieldUpdateOperationsInput | $Enums.TimeSlot
+  category?: Prisma.EnumLicenceClassFieldUpdateOperationsInput | $Enums.LicenceClass
   capacity?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -533,6 +560,7 @@ export type SessionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   id?: boolean
   day?: boolean
   timeSlot?: boolean
+  category?: boolean
   capacity?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -547,13 +575,14 @@ export type SessionSelectScalar = {
   id?: boolean
   day?: boolean
   timeSlot?: boolean
+  category?: boolean
   capacity?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   metadata?: boolean
 }
 
-export type SessionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "day" | "timeSlot" | "capacity" | "createdAt" | "updatedAt" | "metadata", ExtArgs["result"]["session"]>
+export type SessionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "day" | "timeSlot" | "category" | "capacity" | "createdAt" | "updatedAt" | "metadata", ExtArgs["result"]["session"]>
 export type SessionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   bookings?: boolean | Prisma.Session$bookingsArgs<ExtArgs>
   _count?: boolean | Prisma.SessionCountOutputTypeDefaultArgs<ExtArgs>
@@ -568,6 +597,7 @@ export type $SessionPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     id: string
     day: $Enums.Day
     timeSlot: $Enums.TimeSlot
+    category: $Enums.LicenceClass
     capacity: number
     createdAt: Date
     updatedAt: Date
@@ -945,6 +975,7 @@ export interface SessionFieldRefs {
   readonly id: Prisma.FieldRef<"Session", 'String'>
   readonly day: Prisma.FieldRef<"Session", 'Day'>
   readonly timeSlot: Prisma.FieldRef<"Session", 'TimeSlot'>
+  readonly category: Prisma.FieldRef<"Session", 'LicenceClass'>
   readonly capacity: Prisma.FieldRef<"Session", 'Int'>
   readonly createdAt: Prisma.FieldRef<"Session", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Session", 'DateTime'>
