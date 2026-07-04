@@ -425,8 +425,8 @@ export default function StudentsList({ isAdmin = false }) {
 
         <CardContent>
           {/* Search and Filters */}
-          <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 mb-6">
-            <div className="relative flex-1">
+          <div className="mb-6 md:flex md:gap-4">
+            <div className="relative md:flex-1 mb-3 md:mb-0">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search by name, ID, email, or phone..."
@@ -441,6 +441,7 @@ export default function StudentsList({ isAdmin = false }) {
               )}
             </div>
 
+            <div className="grid grid-cols-2 gap-2 md:flex md:gap-4">
             <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
               <SelectTrigger className="w-full md:w-36">
                 <SelectValue />
@@ -465,7 +466,7 @@ export default function StudentsList({ isAdmin = false }) {
             </Select>
 
             <Select value={studentsPerPage.toString()} onValueChange={handleLimitChange}>
-              <SelectTrigger className="w-full md:w-32">
+              <SelectTrigger className="w-full md:w-32 col-span-2 md:col-span-1">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -475,6 +476,7 @@ export default function StudentsList({ isAdmin = false }) {
                 <SelectItem value="100">100 per page</SelectItem>
               </SelectContent>
             </Select>
+            </div>
           </div>
 
           {/* Bulk action bar (admin) */}

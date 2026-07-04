@@ -982,12 +982,13 @@ function SettingsPanel() {
     );
   }
 
-  const subTab = (value, Icon, label) => (
+  const subTab = (value, Icon, label, short) => (
     <TabsTrigger
       value={value}
-      className="flex-1 h-full px-4 text-slate-500 data-[state=active]:bg-blue-900 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-md transition-all"
+      className="flex-1 h-full px-2 sm:px-4 text-xs sm:text-sm text-slate-500 data-[state=active]:bg-blue-900 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-md transition-all"
     >
-      <Icon className="w-4 h-4 mr-1.5" />
+      <Icon className="w-4 h-4 mr-1 sm:mr-1.5 shrink-0" />
+      <span className="sm:hidden">{short}</span>
       <span className="hidden sm:inline">{label}</span>
     </TabsTrigger>
   );
@@ -1006,10 +1007,10 @@ function SettingsPanel() {
 
       <Tabs defaultValue="capacity" className="w-full">
         <TabsList className="w-full h-11 bg-transparent border border-slate-200 p-1 rounded-lg">
-          {subTab('capacity', SlidersHorizontal, 'Schedule & capacity')}
-          {subTab('rules', BarChart3, 'Booking rules')}
-          {subTab('automation', Zap, 'Automation')}
-          {subTab('maintenance', RefreshCcw, 'Maintenance')}
+          {subTab('capacity', SlidersHorizontal, 'Schedule & capacity', 'Capacity')}
+          {subTab('rules', BarChart3, 'Booking rules', 'Rules')}
+          {subTab('automation', Zap, 'Automation', 'Auto')}
+          {subTab('maintenance', RefreshCcw, 'Maintenance', 'Archive')}
         </TabsList>
 
         {/* Primary: per-class capacity is how offerings are controlled */}
