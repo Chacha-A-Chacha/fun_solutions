@@ -30,6 +30,8 @@ import {
   SlidersHorizontal,
   Loader2,
   CheckCircle2,
+  Download,
+  MoreVertical,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -54,7 +56,6 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from '@/components/ui/sheet';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -68,6 +69,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 // Custom components
 import CreateStudentForm from '@/components/CreateStudentForm';
@@ -93,6 +101,10 @@ export default function InstructorDashboard() {
   const [userRole, setUserRole] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [isMobile, setIsMobile] = useState(false);
+  // Header action sheets — controlled so both desktop buttons and the mobile overflow menu can open them
+  const [createStudentOpen, setCreateStudentOpen] = useState(false);
+  const [addInstructorOpen, setAddInstructorOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const isAdmin = userRole === 'ADMIN';
 
@@ -272,87 +284,105 @@ export default function InstructorDashboard() {
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <header className="bg-blue-900 shadow-lg sticky top-0 z-10 pt-[env(safe-area-inset-top)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center space-y-4 md:space-y-0">
-            <div>
-              <h1 className="text-2xl font-bold text-white">Instructor Dashboard</h1>
-              <p className="text-sm text-blue-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex justify-between items-center gap-3">
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-2xl font-bold text-white truncate">Instructor Dashboard</h1>
+              <p className="hidden sm:block text-sm text-blue-200">
                 Manage sessions and students
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-              {/* Create Student Button (Admin only) */}
+            {/* Desktop actions */}
+            <div className="hidden sm:flex items-center gap-3 shrink-0">
               {isAdmin && (
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button className="w-full sm:w-auto bg-white text-blue-900 hover:bg-blue-50">
-                      <UserPlus className="mr-2 h-4 w-4" />
-                      Create Student
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="right" className="overflow-y-auto">
-                    <SheetHeader>
-                      <SheetTitle>Create New Student</SheetTitle>
-                      <SheetDescription>
-                        Add a new student to the system
-                      </SheetDescription>
-                    </SheetHeader>
-                    <div className="py-4">
-                      <CreateStudentForm onSuccess={handleStudentCreated} />
-                    </div>
-                  </SheetContent>
-                </Sheet>
+                <Button onClick={() => setCreateStudentOpen(true)} className="bg-white text-blue-900 hover:bg-blue-50">
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Create Student
+                </Button>
               )}
-
-              {/* Add Instructor Button (Admin only) */}
               {isAdmin && (
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" className="w-full sm:w-auto bg-transparent border-blue-300 text-white hover:bg-blue-800 hover:text-white">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Instructor
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="right" className="overflow-y-auto">
-                    <SheetHeader>
-                      <SheetTitle>Add Staff Member</SheetTitle>
-                      <SheetDescription>
-                        Create a new instructor or admin account
-                      </SheetDescription>
-                    </SheetHeader>
-                    <div className="py-4">
-                      <AddInstructorForm onSuccess={() => toast.success('Staff member added')} />
-                    </div>
-                  </SheetContent>
-                </Sheet>
+                <Button variant="outline" onClick={() => setAddInstructorOpen(true)} className="bg-transparent border-blue-300 text-white hover:bg-blue-800 hover:text-white">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Instructor
+                </Button>
               )}
-
-              {/* Export Button (configurable) */}
-              <ExportDataSheet />
-
-              {/* Refresh Button */}
-              <Button
-                size="icon"
-                disabled={refreshing}
-                onClick={fetchData}
-                className="hidden sm:flex bg-transparent text-blue-200 hover:text-white hover:bg-blue-800 shadow-none"
-              >
+              <Button variant="outline" onClick={() => setExportOpen(true)} className="bg-transparent text-blue-100 border-blue-400 hover:bg-blue-800 hover:text-white">
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
+              </Button>
+              <Button size="icon" disabled={refreshing} onClick={fetchData} className="bg-transparent text-blue-200 hover:text-white hover:bg-blue-800 shadow-none">
                 <RefreshCcw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
               </Button>
-
-              {/* Logout Button */}
-              <Button
-                size="icon"
-                onClick={handleLogout}
-                className="bg-transparent text-blue-200 hover:text-white hover:bg-blue-800 shadow-none"
-              >
+              <Button size="icon" onClick={handleLogout} className="bg-transparent text-blue-200 hover:text-white hover:bg-blue-800 shadow-none">
                 <LogOut className="h-4 w-4" />
               </Button>
+            </div>
+
+            {/* Mobile: refresh + overflow menu (keeps the top bar compact) */}
+            <div className="flex sm:hidden items-center gap-1 shrink-0">
+              <Button size="icon" disabled={refreshing} onClick={fetchData} className="bg-transparent text-blue-200 hover:text-white hover:bg-blue-800 shadow-none">
+                <RefreshCcw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="icon" className="bg-transparent text-blue-100 hover:text-white hover:bg-blue-800 shadow-none">
+                    <MoreVertical className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  {isAdmin && (
+                    <DropdownMenuItem onSelect={() => setCreateStudentOpen(true)}>
+                      <UserPlus className="mr-2 h-4 w-4" /> Create Student
+                    </DropdownMenuItem>
+                  )}
+                  {isAdmin && (
+                    <DropdownMenuItem onSelect={() => setAddInstructorOpen(true)}>
+                      <Plus className="mr-2 h-4 w-4" /> Add Instructor
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onSelect={() => setExportOpen(true)}>
+                    <Download className="mr-2 h-4 w-4" /> Export CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={handleLogout} className="text-red-600 focus:text-red-700">
+                    <LogOut className="mr-2 h-4 w-4" /> Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
       </header>
+
+      {/* Header action sheets (controlled — opened from desktop buttons or the mobile menu) */}
+      {isAdmin && (
+        <Sheet open={createStudentOpen} onOpenChange={setCreateStudentOpen}>
+          <SheetContent side="right" className="overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle>Create New Student</SheetTitle>
+              <SheetDescription>Add a new student to the system</SheetDescription>
+            </SheetHeader>
+            <div className="py-4">
+              <CreateStudentForm onSuccess={(s) => { handleStudentCreated(s); setCreateStudentOpen(false); }} />
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
+      {isAdmin && (
+        <Sheet open={addInstructorOpen} onOpenChange={setAddInstructorOpen}>
+          <SheetContent side="right" className="overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle>Add Staff Member</SheetTitle>
+              <SheetDescription>Create a new instructor or admin account</SheetDescription>
+            </SheetHeader>
+            <div className="py-4">
+              <AddInstructorForm onSuccess={() => { toast.success('Staff member added'); setAddInstructorOpen(false); }} />
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
+      <ExportDataSheet open={exportOpen} onOpenChange={setExportOpen} showTrigger={false} />
 
       {/* Main content */}
       <main className="container mx-auto px-4 py-6">

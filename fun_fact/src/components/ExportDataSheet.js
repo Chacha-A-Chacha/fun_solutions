@@ -41,8 +41,11 @@ const DATASETS = {
   },
 };
 
-export default function ExportDataSheet() {
-  const [open, setOpen] = useState(false);
+export default function ExportDataSheet({ open: openProp, onOpenChange, showTrigger = true }) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? openProp : internalOpen;
+  const setOpen = isControlled ? onOpenChange : setInternalOpen;
   const [type, setType] = useState('enrollments');
   const [studentStatus, setStudentStatus] = useState('active');
   const [week, setWeek] = useState('all');
@@ -62,15 +65,17 @@ export default function ExportDataSheet() {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button
-          variant="outline"
-          className="w-full sm:w-auto bg-transparent text-blue-100 border-blue-400 hover:bg-blue-800 hover:text-white"
-        >
-          <Download className="mr-2 h-4 w-4" />
-          Export CSV
-        </Button>
-      </SheetTrigger>
+      {showTrigger && (
+        <SheetTrigger asChild>
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto bg-transparent text-blue-100 border-blue-400 hover:bg-blue-800 hover:text-white"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
+        </SheetTrigger>
+      )}
       <SheetContent side="right" className="overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
