@@ -1,7 +1,7 @@
 export default function manifest() {
   return {
-    name: 'IYF We Can Academy',
-    short_name: 'IYF Academy',
+    name: 'Practicals',
+    short_name: 'Practicals',
     description: 'Book your practical driving sessions easily',
     start_url: '/',
     display: 'standalone',

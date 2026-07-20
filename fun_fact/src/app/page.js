@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Info } from "lucide-react";
 
 export const metadata = {
-  title: "IYF We Can Academy - Session Scheduler",
+  title: "Practicals",
   description: "Log in to book your practical sessions",
 };
 
@@ -22,16 +22,10 @@ export default async function LoginPage() {
       </div>
 
       <div className="relative max-w-md mx-auto w-full">
-        {/* Logo */}
+        {/* Wordmark */}
         <div className="text-center mb-6">
-          <div className="inline-block bg-blue-950 rounded-2xl px-6 py-3 shadow-lg mb-3">
-            <img
-              src="/App-Logo.png"
-              alt="IYF We Can Academy"
-              className="h-20 w-auto"
-            />
-          </div>
-          <p className="text-blue-200 text-sm">
+          <h1 className="text-4xl font-bold tracking-tight text-white">Practicals</h1>
+          <p className="text-blue-200 text-sm mt-2">
             Book your practical driving sessions
           </p>
         </div>

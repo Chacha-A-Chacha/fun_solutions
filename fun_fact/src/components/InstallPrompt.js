@@ -45,7 +45,7 @@ export default function InstallPrompt() {
       </div>
       <div className="min-w-0 flex-1">
         <div className="text-sm font-semibold text-gray-900">Install the app</div>
-        <div className="text-xs text-gray-500">Add IYF Academy to your home screen for quick access.</div>
+        <div className="text-xs text-gray-500">Add Practicals to your home screen for quick access.</div>
       </div>
       <Button size="sm" onClick={install} className="bg-blue-900 hover:bg-blue-800 shrink-0">
         Install

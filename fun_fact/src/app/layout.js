@@ -8,12 +8,12 @@ import { Providers } from './providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'IYF We Can Academy',
+  title: 'Practicals',
   description: 'Book your practical driving sessions easily',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'IYF Academy',
+    title: 'Practicals',
   },
 };
 
