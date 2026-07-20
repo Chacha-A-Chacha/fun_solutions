@@ -11,7 +11,8 @@
 
 export const StudentStatus = {
   ACTIVE: 'ACTIVE',
-  INACTIVE: 'INACTIVE'
+  INACTIVE: 'INACTIVE',
+  ARCHIVED: 'ARCHIVED'
 } as const
 
 export type StudentStatus = (typeof StudentStatus)[keyof typeof StudentStatus]

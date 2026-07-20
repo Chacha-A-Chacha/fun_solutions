@@ -26,6 +26,7 @@ export type AggregateStudent = {
 
 export type StudentMinAggregateOutputType = {
   id: string | null
+  studentNumber: string | null
   email: string | null
   name: string | null
   phoneNumber: string | null
@@ -38,6 +39,7 @@ export type StudentMinAggregateOutputType = {
 
 export type StudentMaxAggregateOutputType = {
   id: string | null
+  studentNumber: string | null
   email: string | null
   name: string | null
   phoneNumber: string | null
@@ -50,6 +52,7 @@ export type StudentMaxAggregateOutputType = {
 
 export type StudentCountAggregateOutputType = {
   id: number
+  studentNumber: number
   email: number
   name: number
   phoneNumber: number
@@ -64,6 +67,7 @@ export type StudentCountAggregateOutputType = {
 
 export type StudentMinAggregateInputType = {
   id?: true
+  studentNumber?: true
   email?: true
   name?: true
   phoneNumber?: true
@@ -76,6 +80,7 @@ export type StudentMinAggregateInputType = {
 
 export type StudentMaxAggregateInputType = {
   id?: true
+  studentNumber?: true
   email?: true
   name?: true
   phoneNumber?: true
@@ -88,6 +93,7 @@ export type StudentMaxAggregateInputType = {
 
 export type StudentCountAggregateInputType = {
   id?: true
+  studentNumber?: true
   email?: true
   name?: true
   phoneNumber?: true
@@ -173,6 +179,7 @@ export type StudentGroupByArgs<ExtArgs extends runtime.Types.Extensions.Internal
 
 export type StudentGroupByOutputType = {
   id: string
+  studentNumber: string | null
   email: string
   name: string
   phoneNumber: string | null
@@ -206,6 +213,7 @@ export type StudentWhereInput = {
   OR?: Prisma.StudentWhereInput[]
   NOT?: Prisma.StudentWhereInput | Prisma.StudentWhereInput[]
   id?: Prisma.StringFilter<"Student"> | string
+  studentNumber?: Prisma.StringNullableFilter<"Student"> | string | null
   email?: Prisma.StringFilter<"Student"> | string
   name?: Prisma.StringFilter<"Student"> | string
   phoneNumber?: Prisma.StringNullableFilter<"Student"> | string | null
@@ -219,6 +227,7 @@ export type StudentWhereInput = {
 
 export type StudentOrderByWithRelationInput = {
   id?: Prisma.SortOrder
+  studentNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   email?: Prisma.SortOrder
   name?: Prisma.SortOrder
   phoneNumber?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -237,6 +246,7 @@ export type StudentWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.StudentWhereInput | Prisma.StudentWhereInput[]
   OR?: Prisma.StudentWhereInput[]
   NOT?: Prisma.StudentWhereInput | Prisma.StudentWhereInput[]
+  studentNumber?: Prisma.StringNullableFilter<"Student"> | string | null
   name?: Prisma.StringFilter<"Student"> | string
   phoneNumber?: Prisma.StringNullableFilter<"Student"> | string | null
   category?: Prisma.EnumLicenceClassFilter<"Student"> | $Enums.LicenceClass
@@ -249,6 +259,7 @@ export type StudentWhereUniqueInput = Prisma.AtLeast<{
 
 export type StudentOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
+  studentNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   email?: Prisma.SortOrder
   name?: Prisma.SortOrder
   phoneNumber?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -267,6 +278,7 @@ export type StudentScalarWhereWithAggregatesInput = {
   OR?: Prisma.StudentScalarWhereWithAggregatesInput[]
   NOT?: Prisma.StudentScalarWhereWithAggregatesInput | Prisma.StudentScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Student"> | string
+  studentNumber?: Prisma.StringNullableWithAggregatesFilter<"Student"> | string | null
   email?: Prisma.StringWithAggregatesFilter<"Student"> | string
   name?: Prisma.StringWithAggregatesFilter<"Student"> | string
   phoneNumber?: Prisma.StringNullableWithAggregatesFilter<"Student"> | string | null
@@ -279,6 +291,7 @@ export type StudentScalarWhereWithAggregatesInput = {
 
 export type StudentCreateInput = {
   id: string
+  studentNumber?: string | null
   email: string
   name: string
   phoneNumber?: string | null
@@ -292,6 +305,7 @@ export type StudentCreateInput = {
 
 export type StudentUncheckedCreateInput = {
   id: string
+  studentNumber?: string | null
   email: string
   name: string
   phoneNumber?: string | null
@@ -305,6 +319,7 @@ export type StudentUncheckedCreateInput = {
 
 export type StudentUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  studentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -318,6 +333,7 @@ export type StudentUpdateInput = {
 
 export type StudentUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  studentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -331,6 +347,7 @@ export type StudentUncheckedUpdateInput = {
 
 export type StudentCreateManyInput = {
   id: string
+  studentNumber?: string | null
   email: string
   name: string
   phoneNumber?: string | null
@@ -343,6 +360,7 @@ export type StudentCreateManyInput = {
 
 export type StudentUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  studentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -355,6 +373,7 @@ export type StudentUpdateManyMutationInput = {
 
 export type StudentUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  studentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -373,6 +392,7 @@ export type StudentOrderByRelevanceInput = {
 
 export type StudentCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  studentNumber?: Prisma.SortOrder
   email?: Prisma.SortOrder
   name?: Prisma.SortOrder
   phoneNumber?: Prisma.SortOrder
@@ -385,6 +405,7 @@ export type StudentCountOrderByAggregateInput = {
 
 export type StudentMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  studentNumber?: Prisma.SortOrder
   email?: Prisma.SortOrder
   name?: Prisma.SortOrder
   phoneNumber?: Prisma.SortOrder
@@ -397,6 +418,7 @@ export type StudentMaxOrderByAggregateInput = {
 
 export type StudentMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  studentNumber?: Prisma.SortOrder
   email?: Prisma.SortOrder
   name?: Prisma.SortOrder
   phoneNumber?: Prisma.SortOrder
@@ -452,6 +474,7 @@ export type StudentUpdateOneRequiredWithoutBookingsNestedInput = {
 
 export type StudentCreateWithoutBookingsInput = {
   id: string
+  studentNumber?: string | null
   email: string
   name: string
   phoneNumber?: string | null
@@ -464,6 +487,7 @@ export type StudentCreateWithoutBookingsInput = {
 
 export type StudentUncheckedCreateWithoutBookingsInput = {
   id: string
+  studentNumber?: string | null
   email: string
   name: string
   phoneNumber?: string | null
@@ -492,6 +516,7 @@ export type StudentUpdateToOneWithWhereWithoutBookingsInput = {
 
 export type StudentUpdateWithoutBookingsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  studentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -504,6 +529,7 @@ export type StudentUpdateWithoutBookingsInput = {
 
 export type StudentUncheckedUpdateWithoutBookingsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  studentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phoneNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -547,6 +573,7 @@ export type StudentCountOutputTypeCountBookingsArgs<ExtArgs extends runtime.Type
 
 export type StudentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  studentNumber?: boolean
   email?: boolean
   name?: boolean
   phoneNumber?: boolean
@@ -563,6 +590,7 @@ export type StudentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
 
 export type StudentSelectScalar = {
   id?: boolean
+  studentNumber?: boolean
   email?: boolean
   name?: boolean
   phoneNumber?: boolean
@@ -573,7 +601,7 @@ export type StudentSelectScalar = {
   updatedAt?: boolean
 }
 
-export type StudentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "name" | "phoneNumber" | "category" | "status" | "deactivatedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["student"]>
+export type StudentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "studentNumber" | "email" | "name" | "phoneNumber" | "category" | "status" | "deactivatedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["student"]>
 export type StudentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   bookings?: boolean | Prisma.Student$bookingsArgs<ExtArgs>
   _count?: boolean | Prisma.StudentCountOutputTypeDefaultArgs<ExtArgs>
@@ -586,6 +614,7 @@ export type $StudentPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
+    studentNumber: string | null
     email: string
     name: string
     phoneNumber: string | null
@@ -965,6 +994,7 @@ export interface Prisma__StudentClient<T, Null = never, ExtArgs extends runtime.
  */
 export interface StudentFieldRefs {
   readonly id: Prisma.FieldRef<"Student", 'String'>
+  readonly studentNumber: Prisma.FieldRef<"Student", 'String'>
   readonly email: Prisma.FieldRef<"Student", 'String'>
   readonly name: Prisma.FieldRef<"Student", 'String'>
   readonly phoneNumber: Prisma.FieldRef<"Student", 'String'>

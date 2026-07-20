@@ -46,7 +46,7 @@ async function buildEnrollmentsCsv(opts) {
       bookings: {
         where: bookingWhere,
         include: {
-          student: { select: { id: true, name: true, email: true, phoneNumber: true, status: true } }
+          student: { select: { id: true, studentNumber: true, name: true, email: true, phoneNumber: true, status: true } }
         },
         orderBy: { createdAt: 'asc' }
       }
@@ -82,7 +82,7 @@ async function buildEnrollmentsCsv(opts) {
       csv += csvRow([
         ...sessionCols,
         formatDate(booking.weekOf),
-        s.id, s.name, s.email, s.phoneNumber || '', booking.status
+        s.studentNumber || s.id, s.name, s.email, s.phoneNumber || '', booking.status
       ]);
     });
   }
@@ -109,7 +109,7 @@ async function buildStudentsCsv(opts) {
   for (const student of students) {
     const completed = student.bookings.filter(b => b.status === 'COMPLETED').length;
     csv += csvRow([
-      student.id, student.name, student.email, student.phoneNumber || '', student.category, student.status,
+      student.studentNumber || student.id, student.name, student.email, student.phoneNumber || '', student.category, student.status,
       completed, totalRequired, completed >= totalRequired ? 'Yes' : 'No',
       student.bookings.length, formatDate(student.createdAt), formatDate(student.deactivatedAt)
     ]);
@@ -124,7 +124,7 @@ async function buildBookingsCsv(opts) {
   const bookings = await prisma.booking.findMany({
     where,
     include: {
-      student: { select: { id: true, name: true, status: true } },
+      student: { select: { id: true, studentNumber: true, name: true, status: true } },
       session: { select: { day: true, timeSlot: true } },
       markedBy: { select: { name: true } }
     },
@@ -138,7 +138,7 @@ async function buildBookingsCsv(opts) {
 
   for (const b of bookings) {
     csv += csvRow([
-      b.id, b.student.id, b.student.name, b.student.status, b.category,
+      b.id, b.student.studentNumber || b.student.id, b.student.name, b.student.status, b.category,
       DAY_NAMES[b.session.day], TIME_SLOT_NAMES[b.session.timeSlot],
       formatDate(b.weekOf), b.status, b.markedBy?.name || '',
       formatDate(b.attendedAt), formatDate(b.completedAt), b.notes || ''

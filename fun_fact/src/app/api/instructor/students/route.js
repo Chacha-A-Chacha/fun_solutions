@@ -35,9 +35,11 @@ export const GET = withRole('INSTRUCTOR', 'ADMIN')(async function GET(request) {
     // inactive shows only deactivated, all shows everyone.
     const statusFilter = statusParam === 'inactive'
       ? { status: 'INACTIVE' }
-      : statusParam === 'all'
-        ? {}
-        : { status: 'ACTIVE' };
+      : statusParam === 'archived'
+        ? { status: 'ARCHIVED' }
+        : statusParam === 'all'
+          ? {}
+          : { status: 'ACTIVE' };
 
     // Build where clause for search
     const searchFilter = search.trim() ? {
@@ -109,6 +111,7 @@ export const GET = withRole('INSTRUCTOR', 'ADMIN')(async function GET(request) {
 
       return {
         id: student.id,
+        studentNumber: student.studentNumber || student.id,
         name: student.name,
         email: student.email,
         phoneNumber: student.phoneNumber,

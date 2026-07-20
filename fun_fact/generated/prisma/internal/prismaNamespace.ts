@@ -913,6 +913,7 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 
 export const StudentScalarFieldEnum = {
   id: 'id',
+  studentNumber: 'studentNumber',
   email: 'email',
   name: 'name',
   phoneNumber: 'phoneNumber',
@@ -1033,6 +1034,7 @@ export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 
 export const StudentOrderByRelevanceFieldEnum = {
   id: 'id',
+  studentNumber: 'studentNumber',
   email: 'email',
   name: 'name',
   phoneNumber: 'phoneNumber'

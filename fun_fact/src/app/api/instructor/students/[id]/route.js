@@ -87,6 +87,7 @@ export const GET = withRole('INSTRUCTOR', 'ADMIN')(async function GET(request, {
     return NextResponse.json({
       student: {
         id: student.id,
+        studentNumber: student.studentNumber || student.id,
         name: student.name,
         email: student.email,
         phoneNumber: student.phoneNumber,

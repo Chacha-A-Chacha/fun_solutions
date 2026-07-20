@@ -13,6 +13,7 @@ datasource db {
 enum StudentStatus {
   ACTIVE
   INACTIVE
+  ARCHIVED // permanent — releases the student number for reuse; no reactivation
 }
 
 // Kenyan NTSA driving licence classes (base classes only; E/F endorsements
@@ -36,7 +37,8 @@ enum LicenceClass {
 }
 
 model Student {
-  id            String        @id // Student ID like DR-4824-25
+  id            String        @id // Student number (DR-4824-25) while active; suffixed on archive to free the number
+  studentNumber String?       // set on archive = the original readable number; display falls back to id when null
   email         String        @unique
   name          String
   phoneNumber   String?

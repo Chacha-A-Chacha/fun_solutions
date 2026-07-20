@@ -202,7 +202,7 @@ export default function StudentHistorySheet({
                   <div className="flex items-center gap-2 text-sm flex-wrap">
                     <User className="w-4 h-4 text-gray-400" />
                     <span className="font-medium">{data.student.name}</span>
-                    <span className="text-gray-400">({data.student.id})</span>
+                    <span className="text-gray-400">({data.student.studentNumber || data.student.id})</span>
                     {data.student.category && (
                       <Badge
                         variant="outline"

@@ -23,7 +23,8 @@ import {
   Pencil,
   Ban,
   RotateCcw,
-  Loader2
+  Loader2,
+  Archive
 } from 'lucide-react';
 
 // Shadcn components
@@ -89,6 +90,10 @@ export default function StudentsList({ isAdmin = false }) {
 
   // Deactivate/reactivate confirmation
   const [toggleStudent, setToggleStudent] = useState(null);
+
+  // Archive & release-number confirmation (permanent)
+  const [archiveStudent, setArchiveStudent] = useState(null);
+  const [archiving, setArchiving] = useState(false);
   const [togglingStatus, setTogglingStatus] = useState(false);
 
   // Debounced search
@@ -213,6 +218,25 @@ export default function StudentsList({ isAdmin = false }) {
   // Refresh data
   const refreshData = () => {
     fetchStudents(currentPage, searchQuery, studentsPerPage, statusFilter);
+  };
+
+  // Archive a student & release their number (permanent, admin only)
+  const handleArchive = async () => {
+    if (!archiveStudent) return;
+    setArchiving(true);
+    try {
+      const { data } = await axios.patch(
+        `/api/instructor/students/${archiveStudent.id}/status`,
+        { status: 'ARCHIVED' }
+      );
+      toast.success(data.message || 'Student archived');
+      setArchiveStudent(null);
+      refreshData();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to archive student');
+    } finally {
+      setArchiving(false);
+    }
   };
 
   // Deactivate / reactivate a student (admin only)
@@ -449,6 +473,7 @@ export default function StudentsList({ isAdmin = false }) {
               <SelectContent>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="archived">Archived</SelectItem>
                 <SelectItem value="all">All</SelectItem>
               </SelectContent>
             </Select>
@@ -535,7 +560,7 @@ export default function StudentsList({ isAdmin = false }) {
                       </TableCell>
                     )}
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium text-gray-900">{student.name}</span>
                         {student.category && (
                           <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700 text-xs">
@@ -547,7 +572,13 @@ export default function StudentsList({ isAdmin = false }) {
                             Inactive
                           </Badge>
                         )}
+                        {student.status === 'ARCHIVED' && (
+                          <Badge variant="outline" className="border-gray-300 bg-gray-100 text-gray-500 text-xs">
+                            Archived
+                          </Badge>
+                        )}
                       </div>
+                      <div className="text-xs text-gray-400 mt-0.5">{student.studentNumber}</div>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
@@ -593,7 +624,7 @@ export default function StudentsList({ isAdmin = false }) {
                         >
                           History
                         </Button>
-                        {isAdmin && (
+                        {isAdmin && student.status !== 'ARCHIVED' && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -603,7 +634,7 @@ export default function StudentsList({ isAdmin = false }) {
                             <Pencil className="w-3 h-3" />
                           </Button>
                         )}
-                        {isAdmin && (
+                        {isAdmin && student.status !== 'ARCHIVED' && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -614,6 +645,17 @@ export default function StudentsList({ isAdmin = false }) {
                             {student.status === 'INACTIVE'
                               ? <RotateCcw className="w-3 h-3" />
                               : <Ban className="w-3 h-3" />}
+                          </Button>
+                        )}
+                        {isAdmin && student.status !== 'ARCHIVED' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-gray-400 hover:text-red-700"
+                            onClick={() => setArchiveStudent(student)}
+                            title="Archive & release number"
+                          >
+                            <Archive className="w-3 h-3" />
                           </Button>
                         )}
                       </div>
@@ -630,21 +672,27 @@ export default function StudentsList({ isAdmin = false }) {
               <Card key={student.id} className="border-gray-200">
                 <CardContent className="p-4">
                   <div className="space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-gray-900">{student.name}</span>
-                        {student.category && (
-                          <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700 text-xs">
-                            {student.category}
-                          </Badge>
-                        )}
-                        {student.status === 'INACTIVE' && (
-                          <Badge variant="secondary" className="bg-gray-200 text-gray-600 text-xs">Inactive</Badge>
+                    <div>
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-2 flex-wrap min-w-0">
+                          <span className="font-medium text-gray-900">{student.name}</span>
+                          {student.category && (
+                            <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700 text-xs">
+                              {student.category}
+                            </Badge>
+                          )}
+                          {student.status === 'INACTIVE' && (
+                            <Badge variant="secondary" className="bg-gray-200 text-gray-600 text-xs">Inactive</Badge>
+                          )}
+                          {student.status === 'ARCHIVED' && (
+                            <Badge variant="outline" className="border-gray-300 bg-gray-100 text-gray-500 text-xs">Archived</Badge>
+                          )}
+                        </div>
+                        {student.isComplete && (
+                          <Badge className="bg-emerald-100 text-emerald-800 text-xs shrink-0">Done</Badge>
                         )}
                       </div>
-                      {student.isComplete && (
-                        <Badge className="bg-emerald-100 text-emerald-800 text-xs">Done</Badge>
-                      )}
+                      <div className="text-xs text-gray-400 mt-0.5">{student.studentNumber}</div>
                     </div>
 
                     {/* Progress bar */}
@@ -683,7 +731,7 @@ export default function StudentsList({ isAdmin = false }) {
                         <History className="w-3 h-3 mr-1" />
                         History
                       </Button>
-                      {isAdmin && (
+                      {isAdmin && student.status !== 'ARCHIVED' && (
                         <Button
                           variant="outline"
                           size="sm"
@@ -694,7 +742,7 @@ export default function StudentsList({ isAdmin = false }) {
                           Edit
                         </Button>
                       )}
-                      {isAdmin && (
+                      {isAdmin && student.status !== 'ARCHIVED' && (
                         <Button
                           variant="outline"
                           size="sm"
@@ -704,6 +752,17 @@ export default function StudentsList({ isAdmin = false }) {
                           {student.status === 'INACTIVE'
                             ? <><RotateCcw className="w-3 h-3 mr-1" />Reactivate</>
                             : <><Ban className="w-3 h-3 mr-1" />Deactivate</>}
+                        </Button>
+                      )}
+                      {isAdmin && student.status !== 'ARCHIVED' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs text-gray-500 border-gray-200"
+                          onClick={() => setArchiveStudent(student)}
+                          title="Archive & release number"
+                        >
+                          <Archive className="w-3 h-3" />
                         </Button>
                       )}
                     </div>
@@ -831,6 +890,34 @@ export default function StudentsList({ isAdmin = false }) {
               {togglingStatus
                 ? <Loader2 className="w-4 h-4 animate-spin" />
                 : toggleStudent?.status === 'INACTIVE' ? 'Reactivate' : 'Deactivate'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Archive & release-number confirmation (permanent) */}
+      <AlertDialog open={!!archiveStudent} onOpenChange={(open) => { if (!open) setArchiveStudent(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center">
+              <Archive className="mr-2 h-5 w-5 text-red-500" />
+              Archive &amp; release number
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This <span className="font-medium">permanently archives</span>{' '}
+              <span className="font-medium">{archiveStudent?.name}</span> ({archiveStudent?.studentNumber}) and{' '}
+              <span className="font-medium">frees their student number</span> so it can be given to a new student.
+              Their history is kept, but this <span className="font-medium">cannot be undone</span> — they can&apos;t be reactivated.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={archiving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleArchive(); }}
+              disabled={archiving}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {archiving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Archive & release'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
