@@ -12,11 +12,7 @@ import {
   User,
   Mail,
   Phone,
-  Loader2,
   History,
-  Ban,
-  RotateCcw,
-  RefreshCcw,
 } from "lucide-react";
 
 import {
@@ -26,18 +22,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -77,8 +62,6 @@ export default function StudentHistorySheet({
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [toggling, setToggling] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   // On phones, present as a bottom sheet (the expected mobile pattern); side drawer on larger screens.
@@ -105,44 +88,8 @@ export default function StudentHistorySheet({
     }
   }, [open, studentId, selfMode]);
 
-  // Admin-only deactivate/reactivate from within the history panel.
-  // Never available in selfMode (a student viewing their own history).
-  const canManage = !selfMode && isAdmin && data?.student;
   const isInactive = data?.student?.status === "INACTIVE";
-
-  const handleToggleStatus = async () => {
-    if (!data?.student) return;
-    const nextStatus = isInactive ? "ACTIVE" : "INACTIVE";
-    setToggling(true);
-    try {
-      const { data: res } = await axios.patch(
-        `/api/instructor/students/${data.student.id}/status`,
-        { status: nextStatus },
-      );
-      // Reflect the change in the open panel without a full refetch
-      setData((prev) => ({
-        ...prev,
-        student: {
-          ...prev.student,
-          status: res.student.status,
-          deactivatedAt: res.student.deactivatedAt,
-        },
-      }));
-      toast.success(
-        nextStatus === "INACTIVE"
-          ? "Student deactivated"
-          : "Student reactivated",
-      );
-      setConfirmOpen(false);
-      if (typeof onStatusChange === "function") onStatusChange();
-    } catch (err) {
-      toast.error(
-        err.response?.data?.error || "Failed to update student status",
-      );
-    } finally {
-      setToggling(false);
-    }
-  };
+  const isArchived = data?.student?.status === "ARCHIVED";
 
   // Group bookings by weekOf
   const bookingsByWeek =
@@ -219,6 +166,14 @@ export default function StudentHistorySheet({
                         Inactive
                       </Badge>
                     )}
+                    {isArchived && (
+                      <Badge
+                        variant="outline"
+                        className="border-gray-300 bg-gray-100 text-gray-500 text-xs"
+                      >
+                        Archived
+                      </Badge>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Mail className="w-4 h-4 text-gray-400" />
@@ -229,26 +184,6 @@ export default function StudentHistorySheet({
                       <Phone className="w-4 h-4 text-gray-400" />
                       {data.student.phoneNumber}
                     </div>
-                  )}
-                  {canManage && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setConfirmOpen(true)}
-                      className={`mt-1 text-xs ${isInactive ? "text-emerald-600 border-emerald-200 hover:bg-emerald-50" : "text-red-600 border-red-200 hover:bg-red-50"}`}
-                    >
-                      {isInactive ? (
-                        <>
-                          <RotateCcw className="w-3 h-3 mr-1" />
-                          Reactivate Student
-                        </>
-                      ) : (
-                        <>
-                          <Ban className="w-3 h-3 mr-1" />
-                          Deactivate Student
-                        </>
-                      )}
-                    </Button>
                   )}
                 </CardContent>
               </Card>
@@ -408,66 +343,6 @@ export default function StudentHistorySheet({
             </>
           )}
         </div>
-
-        {/* Deactivate / Reactivate confirmation */}
-        <AlertDialog
-          open={confirmOpen}
-          onOpenChange={(o) => {
-            if (!toggling) setConfirmOpen(o);
-          }}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center">
-                {isInactive ? (
-                  <RotateCcw className="mr-2 h-5 w-5 text-emerald-500" />
-                ) : (
-                  <Ban className="mr-2 h-5 w-5 text-red-500" />
-                )}
-                {isInactive ? "Reactivate Student" : "Deactivate Student"}
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                {isInactive ? (
-                  <>
-                    This will restore access for{" "}
-                    <span className="font-medium">{data?.student?.name}</span>{" "}
-                    and show them in listings and stats again.
-                  </>
-                ) : (
-                  <>
-                    <span className="font-medium">{data?.student?.name}</span>{" "}
-                    will lose access to log in and book sessions. Their data and
-                    full history are kept and can still be viewed via the
-                    Inactive filter.
-                  </>
-                )}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={toggling}>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleToggleStatus();
-                }}
-                disabled={toggling}
-                className={
-                  isInactive
-                    ? "bg-emerald-600 hover:bg-emerald-700"
-                    : "bg-red-600 hover:bg-red-700"
-                }
-              >
-                {toggling ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : isInactive ? (
-                  "Reactivate"
-                ) : (
-                  "Deactivate"
-                )}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </SheetContent>
     </Sheet>
   );

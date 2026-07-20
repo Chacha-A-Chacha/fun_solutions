@@ -21,8 +21,6 @@ import {
   AlertTriangle,
   History,
   Pencil,
-  Ban,
-  RotateCcw,
   Loader2,
   Archive
 } from 'lucide-react';
@@ -88,13 +86,10 @@ export default function StudentsList({ isAdmin = false }) {
   // Edit student sheet
   const [editStudent, setEditStudent] = useState(null);
 
-  // Deactivate/reactivate confirmation
-  const [toggleStudent, setToggleStudent] = useState(null);
-
   // Archive & release-number confirmation (permanent)
   const [archiveStudent, setArchiveStudent] = useState(null);
   const [archiving, setArchiving] = useState(false);
-  const [togglingStatus, setTogglingStatus] = useState(false);
+  const [showBulkArchiveConfirm, setShowBulkArchiveConfirm] = useState(false);
 
   // Debounced search
   const [searchTimeout, setSearchTimeout] = useState(null);
@@ -191,24 +186,25 @@ export default function StudentsList({ isAdmin = false }) {
     });
   };
 
-  // Bulk deactivate the selected active students (admin only)
-  const handleBulkDeactivate = async () => {
-    const targets = students.filter((s) => selectedIds.has(s.id) && s.status === 'ACTIVE');
+  // Bulk archive (& release numbers) the selected students (admin only, permanent)
+  const handleBulkArchive = async () => {
+    const targets = students.filter((s) => selectedIds.has(s.id) && s.status !== 'ARCHIVED');
     if (targets.length === 0) {
-      toast.error('No active students selected');
+      toast.error('No archivable students selected');
       return;
     }
     setBulkBusy(true);
     try {
       const results = await Promise.allSettled(
-        targets.map((s) => axios.patch(`/api/instructor/students/${s.id}/status`, { status: 'INACTIVE' }))
+        targets.map((s) => axios.patch(`/api/instructor/students/${s.id}/status`, { status: 'ARCHIVED' }))
       );
       const ok = results.filter((r) => r.status === 'fulfilled').length;
       const failed = results.length - ok;
-      toast.success(`Deactivated ${ok}${failed ? `, ${failed} failed` : ''}`);
+      toast.success(`Archived ${ok}${failed ? `, ${failed} failed` : ''} — numbers released`);
+      setShowBulkArchiveConfirm(false);
       refreshData();
     } catch {
-      toast.error('Bulk deactivate failed');
+      toast.error('Bulk archive failed');
       refreshData();
     } finally {
       setBulkBusy(false);
@@ -236,42 +232,6 @@ export default function StudentsList({ isAdmin = false }) {
       toast.error(err.response?.data?.error || 'Failed to archive student');
     } finally {
       setArchiving(false);
-    }
-  };
-
-  // Deactivate / reactivate a student (admin only)
-  const handleToggleStatus = async () => {
-    if (!toggleStudent) return;
-    const { id } = toggleStudent;
-    const nextStatus = toggleStudent.status === 'INACTIVE' ? 'ACTIVE' : 'INACTIVE';
-    setTogglingStatus(true);
-    try {
-      const { data: res } = await axios.patch(
-        `/api/instructor/students/${id}/status`,
-        { status: nextStatus }
-      );
-      toast.success(nextStatus === 'INACTIVE' ? 'Student deactivated' : 'Student reactivated');
-
-      // Optimistic update so the change is visible immediately: flip the row's
-      // status, and drop it if it no longer matches the active/inactive filter.
-      setStudents(prev =>
-        prev
-          .map(s => (s.id === id
-            ? { ...s, status: nextStatus, deactivatedAt: res.student?.deactivatedAt ?? null }
-            : s))
-          .filter(s => (
-            statusFilter === 'active' ? s.status === 'ACTIVE'
-              : statusFilter === 'inactive' ? s.status === 'INACTIVE'
-                : true
-          ))
-      );
-
-      setToggleStudent(null);
-      refreshData(); // reconcile analytics, counts, and pagination with the server
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to update student status');
-    } finally {
-      setTogglingStatus(false);
     }
   };
 
@@ -517,11 +477,11 @@ export default function StudentsList({ isAdmin = false }) {
                   variant="outline"
                   className="text-red-600 border-red-200 hover:bg-red-50"
                   disabled={bulkBusy}
-                  onClick={handleBulkDeactivate}
+                  onClick={() => setShowBulkArchiveConfirm(true)}
                 >
                   {bulkBusy
                     ? <Loader2 className="w-4 h-4 animate-spin" />
-                    : <><Ban className="w-4 h-4 mr-1" /> Deactivate selected</>}
+                    : <><Archive className="w-4 h-4 mr-1" /> Archive selected</>}
                 </Button>
               </div>
             </div>
@@ -638,19 +598,6 @@ export default function StudentsList({ isAdmin = false }) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className={`text-xs ${student.status === 'INACTIVE' ? 'text-emerald-600 hover:text-emerald-800' : 'text-red-500 hover:text-red-700'}`}
-                            onClick={() => setToggleStudent(student)}
-                            title={student.status === 'INACTIVE' ? 'Reactivate student' : 'Deactivate student'}
-                          >
-                            {student.status === 'INACTIVE'
-                              ? <RotateCcw className="w-3 h-3" />
-                              : <Ban className="w-3 h-3" />}
-                          </Button>
-                        )}
-                        {isAdmin && student.status !== 'ARCHIVED' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
                             className="text-xs text-gray-400 hover:text-red-700"
                             onClick={() => setArchiveStudent(student)}
                             title="Archive & release number"
@@ -746,23 +693,11 @@ export default function StudentsList({ isAdmin = false }) {
                         <Button
                           variant="outline"
                           size="sm"
-                          className={`text-xs ${student.status === 'INACTIVE' ? 'text-emerald-600 border-emerald-200' : 'text-red-600 border-red-200'}`}
-                          onClick={() => setToggleStudent(student)}
-                        >
-                          {student.status === 'INACTIVE'
-                            ? <><RotateCcw className="w-3 h-3 mr-1" />Reactivate</>
-                            : <><Ban className="w-3 h-3 mr-1" />Deactivate</>}
-                        </Button>
-                      )}
-                      {isAdmin && student.status !== 'ARCHIVED' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs text-gray-500 border-gray-200"
+                          className="text-xs text-gray-600 border-gray-200"
                           onClick={() => setArchiveStudent(student)}
-                          title="Archive & release number"
                         >
-                          <Archive className="w-3 h-3" />
+                          <Archive className="w-3 h-3 mr-1" />
+                          Archive
                         </Button>
                       )}
                     </div>
@@ -860,41 +795,6 @@ export default function StudentsList({ isAdmin = false }) {
         }}
       />
 
-      {/* Deactivate / Reactivate confirmation */}
-      <AlertDialog open={!!toggleStudent} onOpenChange={(open) => { if (!open) setToggleStudent(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center">
-              {toggleStudent?.status === 'INACTIVE' ? (
-                <RotateCcw className="mr-2 h-5 w-5 text-emerald-500" />
-              ) : (
-                <Ban className="mr-2 h-5 w-5 text-red-500" />
-              )}
-              {toggleStudent?.status === 'INACTIVE' ? 'Reactivate Student' : 'Deactivate Student'}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {toggleStudent?.status === 'INACTIVE' ? (
-                <>This will restore access for <span className="font-medium">{toggleStudent?.name}</span> and show them in listings and stats again.</>
-              ) : (
-                <><span className="font-medium">{toggleStudent?.name}</span> will lose access to log in and book sessions. Their data and full history are kept and can still be viewed via the Inactive filter.</>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={togglingStatus}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => { e.preventDefault(); handleToggleStatus(); }}
-              disabled={togglingStatus}
-              className={toggleStudent?.status === 'INACTIVE' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}
-            >
-              {togglingStatus
-                ? <Loader2 className="w-4 h-4 animate-spin" />
-                : toggleStudent?.status === 'INACTIVE' ? 'Reactivate' : 'Deactivate'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {/* Archive & release-number confirmation (permanent) */}
       <AlertDialog open={!!archiveStudent} onOpenChange={(open) => { if (!open) setArchiveStudent(null); }}>
         <AlertDialogContent>
@@ -918,6 +818,33 @@ export default function StudentsList({ isAdmin = false }) {
               className="bg-red-600 hover:bg-red-700"
             >
               {archiving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Archive & release'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk archive confirmation (permanent) */}
+      <AlertDialog open={showBulkArchiveConfirm} onOpenChange={setShowBulkArchiveConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center">
+              <Archive className="mr-2 h-5 w-5 text-red-500" />
+              Archive {selectedIds.size} student{selectedIds.size !== 1 ? 's' : ''}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This <span className="font-medium">permanently archives</span> the selected students and{' '}
+              <span className="font-medium">frees their student numbers</span> for reuse. Their history is kept,
+              but this <span className="font-medium">cannot be undone</span>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkBusy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleBulkArchive(); }}
+              disabled={bulkBusy}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {bulkBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Archive & release'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
