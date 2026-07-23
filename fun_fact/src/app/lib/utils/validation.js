@@ -82,13 +82,6 @@ export async function validateSessionBooking(studentId, sessionId) {
       };
     }
 
-    if (session.metadata?.isEnabled === false) {
-      return {
-        valid: false,
-        error: 'This session is currently unavailable.'
-      };
-    }
-
     // A capacity of 0 means this licence class is not offered at this day/time.
     if (session.capacity <= 0) {
       return {

@@ -63,10 +63,10 @@ async function getSessions(request) {
       studentBookings.map(booking => booking.sessionId)
     );
     
-    // Format the sessions
+    // Format the sessions. Capacity (> 0, enforced in the query above) is the
+    // single source of truth for whether a class slot is offered — the legacy
+    // metadata.isEnabled flag is no longer consulted.
     const formattedSessions = sessions
-      // Filter out disabled sessions
-      .filter(session => session.metadata?.isEnabled !== false)
       .map(session => {
         // Check if this session is booked by the student
         const isBooked = bookedSessionIds.has(session.id);
