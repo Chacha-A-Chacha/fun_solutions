@@ -45,6 +45,7 @@ export const GET = withRole('INSTRUCTOR', 'ADMIN')(async function GET(request) {
             student: {
               select: {
                 id: true,
+                studentNumber: true,
                 name: true,
                 email: true,
                 phoneNumber: true
@@ -84,6 +85,8 @@ export const GET = withRole('INSTRUCTOR', 'ADMIN')(async function GET(request) {
         isEnabled: isEnabled,
         students: bookings.map(booking => ({
           id: booking.student.id,
+          // Archived students carry a suffixed id, so prefer the preserved number
+          studentNumber: booking.student.studentNumber || booking.student.id,
           name: booking.student.name,
           email: booking.student.email,
           phoneNumber: booking.student.phoneNumber,

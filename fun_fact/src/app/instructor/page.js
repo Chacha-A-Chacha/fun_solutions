@@ -82,6 +82,7 @@ import CreateStudentForm from '@/components/CreateStudentForm';
 import AddInstructorForm from '@/components/AddInstructorForm';
 import AddParticipantModal from '@/components/AddParticipantModal';
 import SessionTimetable from '@/components/SessionTimetable';
+import StudentNumber from '@/components/StudentNumber';
 import StudentsList from '@/components/StudentsList';
 import ExportDataSheet from '@/components/ExportDataSheet';
 import SessionCapacityMatrix from '@/components/SessionCapacityMatrix';
@@ -105,6 +106,9 @@ export default function InstructorDashboard() {
   const [createStudentOpen, setCreateStudentOpen] = useState(false);
   const [addInstructorOpen, setAddInstructorOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  // Pending terminal status change awaiting confirmation
+  const [pendingStatus, setPendingStatus] = useState(null);
+  const [applyingStatus, setApplyingStatus] = useState(false);
 
   const isAdmin = userRole === 'ADMIN';
 
@@ -188,11 +192,35 @@ export default function InstructorDashboard() {
   const handleStatusUpdate = async (bookingId, newStatus) => {
     try {
       await axios.patch(`/api/instructor/bookings/${bookingId}`, { status: newStatus });
-      toast.success(`Status updated to ${newStatus}`);
+      toast.success(`Marked ${STATUS_LABELS[newStatus] || newStatus}`);
       fetchData();
+      return true;
     } catch (err) {
       const msg = err.response?.data?.error || 'Failed to update status';
       toast.error(msg);
+      return false;
+    }
+  };
+
+  // NO_SHOW / COMPLETED / INCOMPLETE are terminal — there is no transition back,
+  // so they go through a confirmation. ATTENDED stays a single tap (it can still
+  // be resolved to COMPLETED or INCOMPLETE afterwards).
+  const requestStatusUpdate = (bookingId, newStatus, studentName) => {
+    if (TERMINAL_STATUSES.includes(newStatus)) {
+      setPendingStatus({ bookingId, status: newStatus, studentName });
+      return;
+    }
+    handleStatusUpdate(bookingId, newStatus);
+  };
+
+  const confirmPendingStatus = async () => {
+    if (!pendingStatus) return;
+    setApplyingStatus(true);
+    try {
+      const ok = await handleStatusUpdate(pendingStatus.bookingId, pendingStatus.status);
+      if (ok) setPendingStatus(null); // keep the dialog open so a failure can be retried
+    } finally {
+      setApplyingStatus(false);
     }
   };
 
@@ -734,7 +762,7 @@ export default function InstructorDashboard() {
                 {rosterSession.students.length > 0 ? (
                   <div className="space-y-2">
                     {rosterSession.students.map((student) => (
-                      <StudentRow key={student.bookingId} student={student} onStatusUpdate={handleStatusUpdate} />
+                      <StudentRow key={student.bookingId} student={student} onStatusUpdate={requestStatusUpdate} />
                     ))}
                   </div>
                 ) : (
@@ -761,6 +789,44 @@ export default function InstructorDashboard() {
         </SheetContent>
       </Sheet>
 
+      {/* Confirm terminal status changes (no way back once set) */}
+      <AlertDialog
+        open={!!pendingStatus}
+        onOpenChange={(o) => { if (!o && !applyingStatus) setPendingStatus(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center">
+              <AlertTriangle className="mr-2 h-5 w-5 text-amber-500" />
+              Mark as {STATUS_LABELS[pendingStatus?.status] || pendingStatus?.status}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingStatus?.status === 'NO_SHOW' ? (
+                <><span className="font-medium">{pendingStatus?.studentName}</span> will be recorded as a no-show for this session.</>
+              ) : (
+                <>
+                  <span className="font-medium">{pendingStatus?.studentName}</span>&apos;s practical will be recorded as{' '}
+                  {STATUS_LABELS[pendingStatus?.status]?.toLowerCase()}.
+                </>
+              )}{' '}
+              This <span className="font-medium">cannot be undone</span>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={applyingStatus}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); confirmPendingStatus(); }}
+              disabled={applyingStatus}
+              className="bg-blue-900 hover:bg-blue-800"
+            >
+              {applyingStatus
+                ? <Loader2 className="w-4 h-4 animate-spin" />
+                : `Mark ${STATUS_LABELS[pendingStatus?.status] || ''}`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <PoweredByFooter variant="light" />
     </div>
   );
@@ -785,6 +851,9 @@ const STATUS_LABELS = {
   CANCELLED: 'Cancelled',
 };
 
+// Statuses with no onward transition — marking one cannot be undone.
+const TERMINAL_STATUSES = ['NO_SHOW', 'COMPLETED', 'INCOMPLETE'];
+
 // Student row with status badge and action buttons.
 // On phones the action buttons drop below the student info and go full-width
 // (bigger tap targets); on desktop they sit inline on the right.
@@ -803,7 +872,9 @@ function StudentRow({ student, onStatusUpdate }) {
             )}
           </div>
           <div className="text-xs text-gray-600 space-y-0.5 mt-1">
-            <div className="truncate">{student.email}</div>
+            <div>
+              <StudentNumber value={student.studentNumber || student.id} />
+            </div>
             {student.phoneNumber && (
               <div>{student.phoneNumber}</div>
             )}
@@ -828,7 +899,7 @@ function StudentRow({ student, onStatusUpdate }) {
                   size="sm"
                   variant="outline"
                   className="flex-1 sm:flex-none h-9 text-xs border-red-300 text-red-700 hover:bg-red-50"
-                  onClick={() => onStatusUpdate(student.bookingId, 'NO_SHOW')}
+                  onClick={() => onStatusUpdate(student.bookingId, 'NO_SHOW', student.name)}
                 >
                   No-Show
                 </Button>
@@ -840,7 +911,7 @@ function StudentRow({ student, onStatusUpdate }) {
                   size="sm"
                   variant="outline"
                   className="flex-1 sm:flex-none h-9 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50"
-                  onClick={() => onStatusUpdate(student.bookingId, 'COMPLETED')}
+                  onClick={() => onStatusUpdate(student.bookingId, 'COMPLETED', student.name)}
                 >
                   Completed
                 </Button>
@@ -848,7 +919,7 @@ function StudentRow({ student, onStatusUpdate }) {
                   size="sm"
                   variant="outline"
                   className="flex-1 sm:flex-none h-9 text-xs border-yellow-300 text-yellow-700 hover:bg-yellow-50"
-                  onClick={() => onStatusUpdate(student.bookingId, 'INCOMPLETE')}
+                  onClick={() => onStatusUpdate(student.bookingId, 'INCOMPLETE', student.name)}
                 >
                   Incomplete
                 </Button>
