@@ -23,7 +23,8 @@ import {
   Pencil,
   Loader2,
   Ban,
-  RotateCcw
+  RotateCcw,
+  MoreVertical
 } from 'lucide-react';
 
 // Shadcn components
@@ -34,6 +35,13 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { LICENCE_CLASSES, LICENCE_CLASS_NAMES } from '@/app/lib/constants';
 import {
   Table,
@@ -580,36 +588,51 @@ export default function StudentsList({ isAdmin = false }) {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
+                        {/* Frequent, harmless action stays visible and labelled */}
                         <Button
                           variant="ghost"
                           size="sm"
                           className="text-xs text-blue-600 hover:text-blue-800"
                           onClick={() => setHistoryStudent(student)}
                         >
+                          <History className="w-3 h-3 mr-1" />
                           History
                         </Button>
+
+                        {/* Occasional admin actions live in a labelled overflow menu,
+                            with the destructive one separated and in red. */}
                         {isAdmin && student.status !== 'ARCHIVED' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-xs text-gray-500 hover:text-gray-800"
-                            onClick={() => setEditStudent(student)}
-                          >
-                            <Pencil className="w-3 h-3" />
-                          </Button>
-                        )}
-                        {isAdmin && student.status !== 'ARCHIVED' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className={`text-xs ${student.status === 'INACTIVE' ? 'text-emerald-600 hover:text-emerald-800' : 'text-red-500 hover:text-red-700'}`}
-                            onClick={() => setToggleStudent(student)}
-                            title={student.status === 'INACTIVE' ? 'Reactivate student' : 'Deactivate student'}
-                          >
-                            {student.status === 'INACTIVE'
-                              ? <RotateCcw className="w-3 h-3" />
-                              : <Ban className="w-3 h-3" />}
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-gray-400 hover:text-gray-700"
+                                aria-label={`More actions for ${student.name}`}
+                              >
+                                <MoreVertical className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem onSelect={() => setEditStudent(student)}>
+                                <Pencil className="w-4 h-4 mr-2" />
+                                Edit details
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onSelect={() => setToggleStudent(student)}
+                                className={student.status === 'INACTIVE'
+                                  ? 'text-emerald-600 focus:text-emerald-700'
+                                  : 'text-red-600 focus:text-red-700'}
+                              >
+                                {student.status === 'INACTIVE' ? (
+                                  <><RotateCcw className="w-4 h-4 mr-2" />Reactivate student</>
+                                ) : (
+                                  <><Ban className="w-4 h-4 mr-2" />Deactivate student</>
+                                )}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         )}
                       </div>
                     </TableCell>
