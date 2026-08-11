@@ -32,7 +32,8 @@ import {
   Phone,
   RefreshCw,
   Clock,
-  History
+  History,
+  AlertTriangle
 } from 'lucide-react';
 import {
   Accordion,
@@ -253,6 +254,20 @@ export default function Dashboard() {
       <StudentHistorySheet selfMode open={historyOpen} onOpenChange={setHistoryOpen} />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
+        {/* Paused account — read-only access, booking disabled */}
+        {student?.status === 'INACTIVE' && (
+          <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <div className="font-semibold text-amber-900">Your account is paused</div>
+              <p className="text-amber-800 mt-0.5">
+                You can still view your sessions and progress, but you can&apos;t book new ones.
+                Please contact your instructor to have your account reactivated.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Instructions — collapsible on mobile to keep the calendar within reach */}
         <Accordion type="single" collapsible defaultValue={guidelinesDefault} className="w-full">
           <AccordionItem value="guidelines" className="border rounded-lg bg-card shadow-sm">

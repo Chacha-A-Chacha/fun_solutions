@@ -10,9 +10,12 @@ import { Button } from '@/components/ui/button';
 import { Users, Clock, CheckCircle } from 'lucide-react';
 import { TIME_SLOT_NAMES } from '@/app/lib/constants';
 import { useSessionData } from '@/app/hooks/useSessionData';
+import { useAuth } from '@/app/hooks/useAuth';
 
 export default function SessionCard({ session }) {
   const { bookSession, isSessionBooked, isDayBooked, remainingSlots, bookingInProgress } = useSessionData();
+  const { student } = useAuth();
+  const isPaused = student?.status === 'INACTIVE';
   const [isBooking, setIsBooking] = useState(false);
   
   // Check if this specific session is booked
@@ -29,7 +32,7 @@ export default function SessionCard({ session }) {
   const isFull = spotsRemaining <= 0;
   
   // Check if the button should be disabled
-  const disabled = isFull || booked || dayAlreadyBooked || hasReachedBookingLimit || isBooking || bookingInProgress;
+  const disabled = isFull || booked || dayAlreadyBooked || hasReachedBookingLimit || isBooking || bookingInProgress || isPaused;
   
   // Handle booking
   const handleBook = async () => {

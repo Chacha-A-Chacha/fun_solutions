@@ -123,8 +123,10 @@ export async function getAuthenticatedStudent() {
       return null;
     }
 
-    // Inactive students keep their data but lose access — revoke the session
-    if (student.status !== 'ACTIVE') {
+    // Archived students are permanently gone and their student number may have
+    // been reassigned to someone else — always revoke. Inactive (deactivated)
+    // students keep read access; booking is blocked in validateSessionBooking.
+    if (student.status === 'ARCHIVED') {
       await clearAuthCookie();
       return null;
     }

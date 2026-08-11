@@ -93,11 +93,19 @@ export async function validateSessionBooking(studentId, sessionId) {
     // The student may only book sessions for their own licence class.
     const student = await prisma.student.findUnique({
       where: { id: studentId },
-      select: { category: true }
+      select: { category: true, status: true }
     });
 
     if (!student) {
       return { valid: false, error: 'Student not found' };
+    }
+
+    // Deactivated students keep read access to their history but cannot book.
+    if (student.status !== 'ACTIVE') {
+      return {
+        valid: false,
+        error: 'Your account is paused. Please contact your instructor to book sessions.'
+      };
     }
 
     if (student.category !== session.category) {

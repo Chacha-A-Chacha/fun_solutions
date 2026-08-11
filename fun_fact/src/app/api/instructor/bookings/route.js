@@ -20,10 +20,16 @@ export const POST = withRole('INSTRUCTOR', 'ADMIN')(async function POST(request)
 
     const weekOf = getCurrentWeekMonday();
 
-    // Check student exists
+    // Check student exists and is active (deactivated/archived students can't be booked in)
     const student = await prisma.student.findUnique({ where: { id: studentId } });
     if (!student) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 });
+    }
+    if (student.status !== 'ACTIVE') {
+      return NextResponse.json(
+        { error: 'This student is not active and cannot be booked into sessions.' },
+        { status: 400 }
+      );
     }
 
     // Check session exists and get current bookings

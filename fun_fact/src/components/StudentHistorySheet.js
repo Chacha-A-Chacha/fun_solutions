@@ -13,6 +13,8 @@ import {
   Mail,
   Phone,
   History,
+  Archive,
+  Loader2,
 } from "lucide-react";
 
 import {
@@ -22,7 +24,18 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -63,6 +76,8 @@ export default function StudentHistorySheet({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [archiveConfirmOpen, setArchiveConfirmOpen] = useState(false);
+  const [archiving, setArchiving] = useState(false);
 
   // On phones, present as a bottom sheet (the expected mobile pattern); side drawer on larger screens.
   useEffect(() => {
@@ -90,6 +105,29 @@ export default function StudentHistorySheet({
 
   const isInactive = data?.student?.status === "INACTIVE";
   const isArchived = data?.student?.status === "ARCHIVED";
+
+  // Archiving is permanent and releases the student number — admin only, and
+  // never in selfMode (a student viewing their own history).
+  const canArchive = !selfMode && isAdmin && data?.student && !isArchived;
+
+  const handleArchive = async () => {
+    if (!data?.student) return;
+    setArchiving(true);
+    try {
+      const { data: res } = await axios.patch(
+        `/api/instructor/students/${data.student.id}/status`,
+        { status: "ARCHIVED" },
+      );
+      toast.success(res.message || "Student archived");
+      setArchiveConfirmOpen(false);
+      if (typeof onStatusChange === "function") onStatusChange();
+      onOpenChange(false);
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Failed to archive student");
+    } finally {
+      setArchiving(false);
+    }
+  };
 
   // Group bookings by weekOf
   const bookingsByWeek =
@@ -184,6 +222,17 @@ export default function StudentHistorySheet({
                       <Phone className="w-4 h-4 text-gray-400" />
                       {data.student.phoneNumber}
                     </div>
+                  )}
+                  {canArchive && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setArchiveConfirmOpen(true)}
+                      className="mt-1 text-xs text-red-600 border-red-200 hover:bg-red-50"
+                    >
+                      <Archive className="w-3 h-3 mr-1" />
+                      Archive &amp; release number
+                    </Button>
                   )}
                 </CardContent>
               </Card>
@@ -343,6 +392,39 @@ export default function StudentHistorySheet({
             </>
           )}
         </div>
+
+        {/* Archive & release number — permanent */}
+        <AlertDialog
+          open={archiveConfirmOpen}
+          onOpenChange={(o) => { if (!archiving) setArchiveConfirmOpen(o); }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center">
+                <Archive className="mr-2 h-5 w-5 text-red-500" />
+                Archive &amp; release number
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This permanently archives{" "}
+                <span className="font-medium">{data?.student?.name}</span>{" "}
+                ({data?.student?.studentNumber || data?.student?.id}) and frees their student
+                number so it can be given to a new student. Their history is kept, but this{" "}
+                <span className="font-medium">cannot be undone</span> — they can&apos;t be
+                reactivated afterwards. To pause a student temporarily, deactivate them instead.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={archiving}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => { e.preventDefault(); handleArchive(); }}
+                disabled={archiving}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {archiving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Archive & release"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </SheetContent>
     </Sheet>
   );

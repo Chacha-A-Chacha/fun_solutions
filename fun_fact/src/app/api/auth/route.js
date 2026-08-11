@@ -41,7 +41,9 @@ export async function POST(request) {
       where: { id },
       select: { status: true }
     });
-    if (existingStudent && existingStudent.status !== 'ACTIVE') {
+    // Archived accounts are permanently closed (their number may now belong to
+    // someone else). Deactivated students may still sign in — they just can't book.
+    if (existingStudent && existingStudent.status === 'ARCHIVED') {
       return NextResponse.json(
         { error: 'This account is no longer active. Please contact the administrator.' },
         { status: 403 }
@@ -74,7 +76,9 @@ export async function POST(request) {
         id: student.id,
         email: student.email,
         name: student.name,
-        phoneNumber: student.phoneNumber
+        phoneNumber: student.phoneNumber,
+        category: student.category,
+        status: student.status
       }
     });
   } catch (error) {
@@ -153,18 +157,18 @@ export async function GET(request) {
       );
     }
 
-    if (student.status !== 'ACTIVE') {
-      await clearAuthCookie(); // Revoke access for deactivated students
+    if (student.status === 'ARCHIVED') {
+      await clearAuthCookie(); // Archived accounts are permanently closed
       return NextResponse.json(
         { error: 'This account is no longer active.' },
         { status: 403 }
       );
     }
 
-    const { status: _status, ...studentData } = student;
-
+    // status is returned so the dashboard can show the "paused" state to
+    // deactivated students (they keep read access but cannot book).
     return NextResponse.json({
-      student: studentData,
+      student,
       message: 'Authentication successful'
     });
   } catch (error) {
